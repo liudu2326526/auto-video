@@ -18,6 +18,11 @@
 - [自动发现工具 Agent 专项方案](docs/tool-discovery-agent.md)
 - [AIHOT 信息源接入设计](docs/sources/aihot.md)
 - [工具发现 Agent 专项 Review](docs/tool-discovery-review.md)
+- [真实实测与录屏 Agent 专项方案](docs/tool-testing-recording-agent.md)
+- [Mac 录屏工程验证记录（Codex 事实记录）](docs/mac-recording-validation.md)
+- [实测与录屏专项 Review](docs/tool-testing-recording-review.md)
+
+实测与录屏专项方案由本机 Claude Code 生成初稿，经 Codex 按主审意见修订；Mac 验证记录及 [探针附件](examples/mac-recording-probe/README.md) 由 Codex 编写。本次仅完成自建测试窗口的无声录屏技术探针，原片留在本机仓库之外，不表示真实产品实测、系统声音或无人值守录屏链路已通过。
 
 ## 1. 目标与首版范围
 
