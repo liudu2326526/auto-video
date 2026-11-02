@@ -6,6 +6,16 @@
 
 **当前状态：本仓库保存方案文档，尚未实现或验收端到端生产系统。** 本次已完成用户提供的参考视频抽帧观察、相关工具能力核查及架构设计；尚未完成实际软件实测、自动录屏、剪映导出和账号发布验证。下文的目录、配置、接口及数据结构均为实施建议或示例。
 
+## 技术方案文档
+
+以下文档由 Claude Code 生成初稿，经独立 review 修订；仅为设计，不表示系统已实现或通过运行验收。
+
+- [技术架构与选型](docs/technical-design.md)
+- [数据、状态与接口契约](docs/data-and-state-contracts.md)
+- [实施工单与里程碑](docs/implementation-plan.md)
+- [验收与故障注入计划](docs/validation-plan.md)
+- [Review 发现、修订及验证记录](docs/review-report.md)
+
 ## 1. 目标与首版范围
 
 完整目标分为五步：

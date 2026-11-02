@@ -1,0 +1,10 @@
+# Runtime data, private recordings and local credentials are not source artifacts.
+/var/
+/jobs/
+/library/inbox/
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+__pycache__/
+*.py[cod]
