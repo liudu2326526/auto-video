@@ -4,7 +4,7 @@
 
 通过 Agent Team 完成工具发现、素材收集、软件实测与录屏、视频剪辑和平台发布，优先面向中文工具实测内容，首批目标平台为抖音和小红书。
 
-**当前状态：本仓库保存方案文档，尚未实现或验收端到端生产系统。** 本次已完成用户提供的参考视频抽帧观察、相关工具能力核查及架构设计；尚未完成实际软件实测、自动录屏、剪映导出和账号发布验证。下文的目录、配置、接口及数据结构均为实施建议或示例。
+**当前状态：已有工具发现 helper；单窗口录屏 helper 已通过离线测试、编译、一次自建安全窗口CLI验证和实现review，尚未验收端到端生产系统。** 已完成参考视频抽帧观察、架构设计及早期自建窗口录屏技术探针；真实软件实测、完整录屏生产链路、剪映导出和账号发布仍未验收。下文总体架构中的目录、配置、接口及数据结构，除明确标为已实现的 MVP 外仍为建议或示例。
 
 ## 技术方案文档
 
@@ -483,3 +483,9 @@ ready → submitting → accepted → reviewing → published
 [tool-discovery](agents/tool-discovery.md)。运行输出放在忽略的 `var/`，未知门槛不进入合格短名单。
 
 首次真实验证已完成：AIHOT RSS 23 条文章线索，经父 Agent 官网核验标注得到 **Gamma** 一个研究候选；7 项门槛仍未知，合格短名单为0，未做账号内实测或录屏。详见[真实运行记录](docs/discovery-live-validation.md)。默认 direct；受管云环境可显式使用 `config/discovery.managed-proxy.example.json`，其DNS/出站信任边界与direct不同，无自动切换。仓库 Agent Skill：`.agents/skills/discover-tools/SKILL.md`。
+
+## 单窗口录屏 operator MVP
+
+实际 CLI：`python3.12 -m recording_agent --help`，提供同步 `record`、持久化 `status/stop/recover` 与仅编译的 `build`。本机 Swift/ScreenCaptureKit 后端只支持显式单窗口、默认无声，权限/来源变化即停，不回退全屏；媒体和状态必须位于 Git 工作树之外。
+
+用法、状态机与限制见 [录屏 MVP](docs/recording-mvp.md)，岗位见 [operator 指令](agents/record-tool-demo.md)，可复用 Skill 为 `.agents/skills/record-tool-demo/SKILL.md`。77项测试和编译通过；两次录前失败保留后，唯一一次实际fixture录屏正常完成，详见 [本机MVP验证](docs/recording-mvp-validation.md)。当前不访问 Gamma 或任何产品账号。`validated` 要求媒体与时长计划通过，但不证明真实工具功能成功；显式早停为partial。异步 start 服务、OS 隔离/完整网关、系统声音和业务 SQL 集成均未实现。
