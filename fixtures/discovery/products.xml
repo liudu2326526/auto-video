@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel>
+<item><guid>news-1</guid><title>Example tool launch</title><link>https://news.example/items/1</link><description>Vendor says edit images at https://tool.example/</description></item>
+<item><guid>news-2</guid><title>Example tool update</title><link>https://news.example/items/2</link></item>
+</channel></rss>

@@ -469,3 +469,12 @@ ready → submitting → accepted → reviewing → published
 7. 人工完整看听标准如何转换为可重复的质量检查与异常处理。
 
 完成以上实施与验收前，本仓库应继续被视为生产方案与建设计划。
+
+## 可运行的工具发现 MVP
+
+现已提供独立的 Python 标准库发现 helper（尚未接入完整 avcd）：
+`python -m discovery_agent --help`。用法、权限与范围见
+[实施说明](docs/discovery-mvp.md)，researcher 执行指令见
+[tool-discovery](agents/tool-discovery.md)。运行输出放在忽略的 `var/`，未知门槛不进入合格短名单。
+
+首次真实验证已完成：AIHOT RSS 23 条文章线索，经父 Agent 官网核验标注得到 **Gamma** 一个研究候选；7 项门槛仍未知，合格短名单为0，未做账号内实测或录屏。详见[真实运行记录](docs/discovery-live-validation.md)。默认 direct；受管云环境可显式使用 `config/discovery.managed-proxy.example.json`，其DNS/出站信任边界与direct不同，无自动切换。仓库 Agent Skill：`.agents/skills/discover-tools/SKILL.md`。
