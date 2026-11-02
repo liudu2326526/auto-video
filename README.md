@@ -15,6 +15,9 @@
 - [实施工单与里程碑](docs/implementation-plan.md)
 - [验收与故障注入计划](docs/validation-plan.md)
 - [Review 发现、修订及验证记录](docs/review-report.md)
+- [自动发现工具 Agent 专项方案](docs/tool-discovery-agent.md)
+- [AIHOT 信息源接入设计](docs/sources/aihot.md)
+- [工具发现 Agent 专项 Review](docs/tool-discovery-review.md)
 
 ## 1. 目标与首版范围
 
