@@ -1,7 +1,8 @@
 # 素材 Agent 与本地素材库 MVP
 
 这是可被父助手反复调用的素材岗位与本地 Python helper。助手用当前可用的公开网页工具实际检索、
-看素材和核查授权；`material_agent` 离线运行，不调用模型、搜索 API 或下载器。
+看素材和核查授权；现可按[公开单文件下载协议](material-download.md)显式执行 download；
+其他命令离线，不调用模型或搜索 API。
 所有新增文件独立于编剧和剪辑模块，未改共享入口。
 
 ## 当前闭环
@@ -74,7 +75,8 @@ download JSON 为 `downloaded_at`、`method`、`source_url`；method 仅接受
 manual_public_download 或 previous_local_material，source_url 必须是本记录素材页或下载地址。
 只有 unknown_local_history 的 previous_local_material 允许 source_url=null。
 downloaded_at 是操作者声明，imported_at 是入库时间。历史旧素材也需要如实填写已有来源与权限。
-无登录的公开页面只表示可访问，不意味着站点准许自动抓取；本 helper 不抓取、不支持登录下载或付费授权。
+无登录的公开页面只表示可访问，不意味着站点准许自动抓取；download只访问支持的公开单文件及必需的robots，
+不支持登录下载或付费授权。
 公开下载前须由助手/操作者核查站点条款和路径。不要调用去水印服务来推定复制授权。
 
 `material_review/v1` 必需字段：schema、record_id、record_digest、file_sha256、reviewer、reviewed_at、
@@ -147,4 +149,4 @@ python3.12 -m unittest discover -s tests -p 'test_material_agent.py' -v
 测试的审核是合成 fixture，绝非实际素材获准。
 
 SQLite 与文件操作是单操作者 MVP，不承诺应对恶意并发写入或直接篡改数据库；摘要防误用，不是签名/权限系统。
-目前没有自动下载、全文/向量检索、网页授权变化监控、商业素材购买、自动肖像/商标识别、自动修图或最终成片验收。
+目前没有任意站点/批量下载、全文/向量检索、网页授权变化监控、商业素材购买、自动肖像/商标识别、自动修图或最终成片验收。

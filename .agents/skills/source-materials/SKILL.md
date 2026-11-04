@@ -16,8 +16,11 @@ description: 根据视频分镜检索公开图片/视频/音频候选，逐项�
 3. 只用 public_queries 通过当前可用的联网工具检索；不假定平台 API 可用。打开单个素材页和
    原始许可页面，保存 asset_license 和 license_terms 两种证据摘要及检索时间。
    无法访问时如实记 blocker；不绕过登录/付费墙/条款或通过其他入口规避拒绝。
-4. 用 `add --record <metadata>` 保存候选。正常、允许的公开下载由操作者执行，取得文件后用
-   新记录 ID 加 `--file <original> --download-record <receipt>` 导入副本。MVP helper 不发网络请求。
+4. 用 `add --record <metadata>` 保存候选。用户已授权下载且是支持的许可明确公开来源时，读取
+   `docs/material-download.md`，用 `download --record <new-record> --policy <trusted-policy> --context <use>`
+   下载单文件、校验并入库。默认系统DNS，其他模式显式选择，失败不自动切换；不换域、关闭公共IP检查、
+   加Cookie或登录绕过拒绝。其他来源正常取得文件后，用新记录 ID 加
+   `--file <original> --download-record <receipt>` 导入副本。plan 不联网，失败可用 downloads --id 查审计。
    来源未知的旧素材可入库，许可保持 unknown，不能交剪辑。
 5. 实际看文件、核对许可适用范围、字幕内容和第三方权益后，填写独立 `material_review/v1`，用
    `review --receipt` 留存操作者、时间、用途、条件与风险处理事实。不能预写通过或冒充用户审核。

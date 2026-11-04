@@ -1,4 +1,4 @@
-"""Offline material bookkeeping; no browser, downloader, model or publication API.
+"""Local material bookkeeping; optional public downloads live in download.py.
 
 Records/reviews are operator assertions, not legal or semantic certification.
 Content is deduplicated independently of immutable provenance records.
@@ -273,8 +273,10 @@ class Library:
                 receipt TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS handoffs (
                 id TEXT PRIMARY KEY, document TEXT NOT NULL, created_at TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS download_events (
+                seq INTEGER PRIMARY KEY, attempt_id TEXT NOT NULL, record_id TEXT NOT NULL, document TEXT NOT NULL);
         ''')
-        for table in ('blobs', 'records', 'reviews', 'usages', 'handoffs'):
+        for table in ('blobs', 'records', 'reviews', 'usages', 'handoffs', 'download_events'):
             for action in ('UPDATE', 'DELETE'):
                 self.db.execute(f'CREATE TRIGGER IF NOT EXISTS immutable_{table}_{action} BEFORE {action} ON {table} '
                                 "BEGIN SELECT RAISE(ABORT, 'append-only material record'); END")
@@ -298,17 +300,18 @@ class Library:
         need(path.is_relative_to(self.root / 'blobs') and file_hash(path) == sha, 'Local blob changed')
         return path
 
-    def add(self, record, file=None, download=None, at=None):
+    def add(self, record, file=None, download=None, at=None, *, _before_commit=None):
         at = at or now()
         validate_record(record, at)
         # A repeated ID can never refresh timestamps/permissions or replace bytes.
         need(self.db.execute('SELECT 1 FROM records WHERE id=?', (record['id'],)).fetchone() is None,
              'Immutable record exists; use a new ID for a new source/license verification')
         sha, imported, download_record = None, None, None
+        created_target = None
         if file is not None:
-            fields(download, ['downloaded_at', 'method', 'source_url'])
+            fields(download, ['downloaded_at', 'method', 'source_url'], ['verification'])
             need(instant(download['downloaded_at']) <= at, 'Future download forbidden')
-            need(download['method'] in {'manual_public_download', 'previous_local_material'}, 'Unsupported acquisition method')
+            need(download['method'] in {'manual_public_download', 'previous_local_material', 'automated_public_download'}, 'Unsupported acquisition method')
             if download['source_url'] is None:
                 need(download['method'] == 'previous_local_material' and record['source']['access'] == 'unknown_local_history',
                      'Only unknown previous local history may omit its acquisition URL')
@@ -318,9 +321,22 @@ class Library:
             need(download['source_url'] in {record['source']['page_url'], record['source']['download_url']},
                  'Download record must match this source')
             source = regular(file)
-            need(source.suffix.lower() in {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mov', '.webm', '.wav', '.mp3', '.m4a'},
+            need(source.suffix.lower() in {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mov', '.webm', '.wav', '.mp3', '.m4a', '.ogg', '.ogv', '.oga'},
                  'Unsupported media extension; import media, not archives or executable files')
             sha = file_hash(source)
+            if download['method'] == 'automated_public_download':
+                evidence = download.get('verification')
+                fields(evidence, ['schema', 'policy_digest', 'file_sha256', 'byte_count', 'requested_url', 'final_url',
+                                  'redirects', 'robots_url', 'robots_sha256', 'robots_checked_at',
+                                  'media_validation', 'network_requests', 'user_agent', 'use_context', 'resolver'])
+                context(evidence['use_context'])
+                need(evidence['schema'] == 'material_download_verification/v1' and evidence['file_sha256'] == sha
+                     and type(evidence['byte_count']) is int and evidence['byte_count'] == source.stat().st_size,
+                     'Automatic acquisition verification must match local bytes')
+                need(evidence['requested_url'] == download['source_url'] and evidence['media_validation'].get('decoded') is True,
+                     'Automatic download must include actual decoding and source verification')
+            else:
+                need('verification' not in download, 'Automatic verification cannot label a manual acquisition')
             existing = self.db.execute('SELECT * FROM blobs WHERE sha256=?', (sha,)).fetchone()
             if existing:
                 self._blob(sha)
@@ -337,14 +353,27 @@ class Library:
                 except BaseException:
                     target.unlink(missing_ok=True)
                     raise
-                self.db.execute('INSERT INTO blobs VALUES (?,?,?)',
-                                (sha, str(target.relative_to(self.root)), target.stat().st_size))
+                created_target = target
+                try:
+                    self.db.execute('INSERT INTO blobs VALUES (?,?,?)',
+                                    (sha, str(target.relative_to(self.root)), target.stat().st_size))
+                except BaseException:
+                    self.db.rollback()
+                    target.unlink(missing_ok=True)
+                    raise
             imported, download_record = stamp(at), canonical(download)
         else:
             need(download is None, 'Cannot record a download without local bytes')
-        with self.db:
-            self.db.execute('INSERT INTO records VALUES (?,?,?,?,?,?,?)',
-                            (record['id'], canonical(record), digest(record), sha, imported, download_record, stamp(at)))
+        try:
+            with self.db:
+                self.db.execute('INSERT INTO records VALUES (?,?,?,?,?,?,?)',
+                                (record['id'], canonical(record), digest(record), sha, imported, download_record, stamp(at)))
+                if _before_commit is not None:
+                    _before_commit()  # Download success audit shares the import transaction.
+        except BaseException:
+            if created_target is not None:
+                created_target.unlink(missing_ok=True)
+            raise
         return self.get(record['id'])
 
     def review(self, receipt, at=None):
@@ -476,7 +505,8 @@ class Library:
                          'instructions': 'Use only explicit public_queries; inspect asset-specific license and terms. Stop on login/paywall/access denial.'})
         return {'schema': 'material_research_plan/v1', 'project_id': requests['project_id'],
                 'requests_digest': digest(requests), 'created_at': stamp(at), 'requests': rows,
-                'automatic_web_search': False, 'automatic_download': False}
+                'automatic_web_search': False, 'automatic_download': False,
+                'download_command_available': True, 'download_provider': 'commons_original'}
 
     def handoff(self, requests, selection, output, at=None):
         at = at or now()
@@ -601,7 +631,13 @@ class Library:
         row = self.get(record_id)
         return {**row, 'download_record': json.loads(row['download_record']) if row['download_record'] else None,
                 'reviews': [json.loads(r[0]) for r in self.db.execute('SELECT receipt FROM reviews WHERE record_id=? ORDER BY seq', (record_id,))],
-                'usages': [json.loads(r[0]) for r in self.db.execute('SELECT receipt FROM usages WHERE record_id=? ORDER BY id', (record_id,))]}
+                'usages': [json.loads(r[0]) for r in self.db.execute('SELECT receipt FROM usages WHERE record_id=? ORDER BY id', (record_id,))],
+                'download_events': self.download_history(record_id)}
+
+    def download_history(self, record_id):
+        identity(record_id)
+        return [json.loads(r[0]) for r in self.db.execute(
+            'SELECT document FROM download_events WHERE record_id=? ORDER BY seq', (record_id,))]
 
 
 def _editor_video(path):

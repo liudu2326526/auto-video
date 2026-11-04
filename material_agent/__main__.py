@@ -1,4 +1,4 @@
-"""Public material research handoffs and a local library; all commands are offline."""
+"""Material library and handoffs; only the explicit download command accesses public HTTPS."""
 import argparse
 import json
 import sqlite3
@@ -18,6 +18,10 @@ def main(argv=None):
     add.add_argument('--record', required=True)
     add.add_argument('--file')
     add.add_argument('--download-record', help='Required acquisition receipt if --file is supplied')
+    download = sub.add_parser('download', help='Fetch one approved public Commons original, validate and import; no login or batch')
+    download.add_argument('--record', required=True)
+    download.add_argument('--policy', required=True, help='Trusted per-record provider/size/deadline policy')
+    download.add_argument('--context', required=True, help='Intended use; downloading does not approve use')
     search = sub.add_parser('search', help='Local title/description/tag matching, including blocked candidates')
     search.add_argument('--query', required=True)
     search.add_argument('--context', required=True)
@@ -35,6 +39,8 @@ def main(argv=None):
     usage.add_argument('--receipt', required=True)
     show = sub.add_parser('show', help='Display provenance, download, review and usage history')
     show.add_argument('--id', required=True)
+    downloads = sub.add_parser('downloads', help='Download/reuse/failure audit, including records not imported after failure')
+    downloads.add_argument('--id', required=True)
     args = parser.parse_args(argv)
     library = None
     try:
@@ -46,6 +52,9 @@ def main(argv=None):
                                  read_json(args.download_record) if args.download_record else None)
         elif args.command == 'search':
             result = library.search(args.query, read_json(args.context), [args.type] if args.type else None, args.limit)
+        elif args.command == 'download':
+            from .download import download_record
+            result = download_record(library, read_json(args.record), read_json(args.policy), read_json(args.context))
         elif args.command == 'review':
             result = library.review(read_json(args.receipt))
         elif args.command == 'handoff':
@@ -54,6 +63,8 @@ def main(argv=None):
             result = library.record_usage(read_json(args.receipt))
         elif args.command == 'verify':
             result = library.verify_handoff(args.handoff)
+        elif args.command == 'downloads':
+            result = library.download_history(args.id)
         else:
             result = library.history(args.id)
         print(json.dumps(result, ensure_ascii=False, indent=2))
