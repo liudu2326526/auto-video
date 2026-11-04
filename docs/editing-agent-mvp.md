@@ -26,7 +26,10 @@
 
 `narration.mode` 可为 `macos_say`（本地已安装 Tingting/Samantha、rate 100..250）或 `provided`（登记的音频素材，时长等于整条时间轴）。
 本地 speech 按字幕区间逐句合成，语句超长时失败，不截断语音、不自动重写文案。
-生成的系统语音仅作为测试声音；正式商业制作另核对选用声音的许可与审听效果。
+生成的系统语音仅作为个人非商业本机试验声音，不能据此取得公开分享或商业许可。
+当前 Sequoia 的 [Apple 许可 §2F](https://www.apple.com/legal/sla/docs/macOSSequoia.pdf)
+对系统声音有明确使用限制；公开交付前须更换有适用许可的声音并重新审听。
+`provided` 也只校验操作者填写的依据和文件，不能自动证明配音许可；不能将系统 TTS 标为自行拥有的商业声音。
 `transitions` 只接受接缝 `dissolve`、1..30 帧、`timing=preserve_total`，实际在剪映应用。
 如果目标剪映版本会缩短时间轴，应调整计划后新建版本，不能忽略总帧数变化。
 

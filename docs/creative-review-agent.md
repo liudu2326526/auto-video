@@ -76,3 +76,56 @@ reviewer 只能表明 operator 或 user 的实际观察，不得冒充另一方�
 
 本机的实际迭代、参考范围、原生资源使用和未完成项见
 [Gamma 返修验证记录](creative-review-validation.md)。技术检查通过不改变其中的待验状态。
+
+## 原创情境动态的准备
+
+`motion` 是独立、显式的准备命令，不是审查通过或剪映落轨。
+本次扩展的 Claude Code 调用另有 45 秒上限，实际超时、本机退出 143、无正文；
+依用户允许的回退，由 Codex 设计、审核和实施。没有向供应商发送媒体。
+
+```sh
+python3 -m creative_agent motion var/creative/original-motion.json \
+  --output var/creative/new-motion-attempt
+```
+
+此命令额外依赖本机已有的 Pillow、FFmpeg 和 macOS STHeiti 字体；不自动安装。
+审查命令不会导入 Pillow。输入严格使用 `original_editorial_motion/v1`：
+`schema / id / source{path,sha256} / annotation_area / evidence_areas / kind / items`。
+矩形均为源视频像素，字段为整数 `x/y/width/height`。示意输入：
+
+```json
+{
+  "schema": "original_editorial_motion/v1",
+  "id": "review-advice",
+  "source": {"path": "silent-clip.mp4", "sha256": "<实际文件的64位SHA-256>"},
+  "annotation_area": {"x": 10, "y": 290, "width": 620, "height": 180},
+  "evidence_areas": [{"x": 0, "y": 0, "width": 640, "height": 260}],
+  "kind": "review_advice",
+  "items": ["数字", "措辞", "完成程度"]
+}
+```
+
+源片只接受单视频轨、无音频、240..3840 偶数尺寸、最多 300 帧，显式检查每帧 PTS
+为从零开始连续 CFR30，不能仅凭平均帧率。注释区宽 300..1024、高 160..512，
+须在画布内且与 1..12 个证据矩形严格不相交；未知字段、越界、布尔坐标、源哈希变化拒绝。
+证据矩形由操作者声明，这个检查不能理解证据内容或批准构图。
+
+仅支持 `paper_stack`（文件卡片轻微移入）和 `review_advice`（三项建议顺序高亮）。
+三项文字均为不超过 10 字的无控制字符短文本；固定显示“情境示意 · 编辑提示”。
+不生成仿冒产品控件、完成勾选或实际用时，不下载图片/表情/配乐。
+逐帧生成注释区 RGBA，最大单帧输入约 2 MiB，不缓存整段原始帧；这不是操作系统内存配额。
+编码子进程有 90 秒 watchdog，库调用可指定 1..120 秒；超时杀掉本次编码器，
+取消时回收本次进程、记录失败并保留 partial，不把文件存在当成成功。
+它不提供对任意 Python 帧生成器的硬实时中断，预检和解码另有各自的有界超时。
+
+新输出目录 0700、拒绝已存在目标、用户符号链接祖先和 `..`；完整解码、帧数、尺寸、
+静音及源哈希复查后才独占封存 `original-motion.mp4`。此处只在指定区域合成像素，
+有损重编码仍可能改变区域外的像素值，不能声称原证据逐像素无损。
+`result.json` 明确 `source_rights_unchanged=true` 和
+`automatic_semantic_or_rights_approval=false`。原创叠加不授予底片、字体、配音的权利，
+不能绕过素材库的人工审核。另记 accent、实际导入剪映、原生导出及逐镜复核收据。
+
+声音可在本机生成不表示可公开使用。当前 macOS Sequoia 系统声音的
+[Apple 许可 §2F](https://www.apple.com/legal/sla/docs/macOSSequoia.pdf)
+限制公开分享及商业等使用，不能把系统 TTS 标为自行拥有的商业配音。
+已有试片保留历史原样并另记发现；公开交付前须更换有适用许可的配音、重新导出和实际听审。

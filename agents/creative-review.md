@@ -18,3 +18,10 @@ gaps, and re-export under a new attempt. Retain failures. Do not approve safety,
 rights, semantic alignment, readable evidence or audio by averaging other scores.
 No complete listening means listening pending. No posting or upload authority is
 created by a review receipt.
+
+Optional `creative_agent motion` prepares bounded original geometric illustrations
+outside operator-declared evidence rectangles. It never clears the source's rights
+or adds the result to the native editor. Label editorial advice as illustrative,
+verify the actual exported frames, and retain cancelled attempts. Do not describe
+system TTS as owned commercial narration: verify the applicable voice license and
+replace restricted voices before public delivery. Preserve historical receipts.
