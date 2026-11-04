@@ -74,7 +74,8 @@ def build_package(candidate, draft, *, evaluated_at=None, test_report=None, evid
     evaluated_at = evaluated_at or datetime.now(timezone.utc).isoformat()
     instant = timestamp(evaluated_at)
     require(isinstance(candidate, dict) and isinstance(draft, dict), 'Objects required')
-    require(draft.get('schema_version') == 1, 'Unsupported draft schema version')
+    require(type(draft.get('schema_version')) is int and draft['schema_version'] == 1,
+            'Unsupported draft schema version')
     require(draft.get('tool_id') == candidate.get('tool_id') and bool(candidate.get('tool_id')),
             'Tool identity mismatch')
     require(draft.get('candidate_digest') == digest(candidate), 'Candidate changed; re-review source references')
@@ -119,7 +120,8 @@ def build_package(candidate, draft, *, evaluated_at=None, test_report=None, evid
             warnings.append(f'{sid}: missing/expired source evidence; cannot support narration')
     tests = {}
     if test_report is not None:
-        require(isinstance(test_report, dict) and test_report.get('schema_version') == 1,
+        require(isinstance(test_report, dict) and type(test_report.get('schema_version')) is int
+                and test_report['schema_version'] == 1,
                 'Unsupported test report')
         require(test_report.get('tool_id') == candidate['tool_id'], 'Test tool mismatch')
         require(evidence_root is not None, 'Evidence root required for test reports')

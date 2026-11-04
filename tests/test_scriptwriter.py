@@ -45,6 +45,14 @@ class ScriptwriterTests(unittest.TestCase):
         self.assertEqual(p['review']['decision'], 'pending')
         self.assertTrue(any('No test-backed' in x for x in p['blockers']))
 
+    def test_draft_boolean_schema_version_is_not_integer_one(self):
+        self.draft['schema_version'] = True
+        self.rejects('Unsupported draft schema version')
+
+    def test_report_boolean_schema_version_is_not_integer_one(self):
+        self.rejects('Unsupported test report', test_report={'schema_version': True,
+                     'tool_id': self.candidate['tool_id'], 'observations': []}, evidence_root='unused')
+
     def test_observed_source_never_becomes_test(self):
         p = self.build()
         self.assertFalse(p['sources'][0]['capability_tested'])
