@@ -12,6 +12,7 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit
+from .story import validate_story
 
 
 def digest(value):
@@ -69,13 +70,16 @@ def safe_artifact(root, ref, expected_hash):
             f'Artifact hash mismatch: {ref}')
 
 
-def build_package(candidate, draft, *, evaluated_at=None, test_report=None, evidence_root=None):
+def build_package(candidate, draft, *, evaluated_at=None, test_report=None, evidence_root=None,
+                  media_catalog=None):
     """Inputs are local trusted annotations; source documents cannot grant authority."""
     evaluated_at = evaluated_at or datetime.now(timezone.utc).isoformat()
     instant = timestamp(evaluated_at)
     require(isinstance(candidate, dict) and isinstance(draft, dict), 'Objects required')
-    require(type(draft.get('schema_version')) is int and draft['schema_version'] == 1,
+    require(type(draft.get('schema_version')) is int and draft['schema_version'] in (1, 2),
             'Unsupported draft schema version')
+    version = draft['schema_version']
+    require(version == 2 or media_catalog is None, 'Media catalog requires explicit draft schema version2')
     require(draft.get('tool_id') == candidate.get('tool_id') and bool(candidate.get('tool_id')),
             'Tool identity mismatch')
     require(draft.get('candidate_digest') == digest(candidate), 'Candidate changed; re-review source references')
@@ -186,6 +190,8 @@ def build_package(candidate, draft, *, evaluated_at=None, test_report=None, evid
         references(step.get('scene_ids'), scenes, 'step scenes', True)
         covered.update(step['scene_ids'])
     require(covered == set(scenes), 'Recording plan must cover every scene')
+    story_info = (validate_story(draft, assets, tests, media_catalog, evidence_root, instant)
+                  if version == 2 else {'story_readiness': 'legacy_unassessed', 'material_gaps': []})
     gates = assessment.get('gates', {})
     require(isinstance(gates, dict), 'Gates object required')
     blocked_gates = [key for key in ('HF1','HF2','HF3','HF4','HF5','HF6','HF7')
@@ -196,10 +202,15 @@ def build_package(candidate, draft, *, evaluated_at=None, test_report=None, evid
         blockers.append('No test-backed result in script: verify the scenario before final narration.')
     if blocked_gates:
         blockers.append('Discovery gates require operator verification: ' + ', '.join(blocked_gates))
+    if story_info['material_gaps']:
+        blockers.append('Missing story materials: do not freeze an edit or invent results; transfer/capture/rewrite listed shots.')
+    if version == 1:
+        blockers.append('Legacy draft has no per-line media coverage assessment; not an editing-ready script.')
+    warnings.extend(story_info.get('story_warnings', []))
     narration_characters = sum(len(re.sub(r'\s', '', s['narration'])) for s in scenes.values())
     if narration_characters > duration * 5:
         warnings.append('Narration exceeds rough 5 characters/second budget; rehearse and shorten.')
-    return {'schema_version': 1, 'status': 'draft_requires_human_review',
+    return {'schema_version': version, 'status': 'draft_requires_human_review',
             'tool_id': candidate['tool_id'], 'tool_name': candidate['name'],
             'evaluated_at': evaluated_at,
             'input_digest': digest({'candidate': candidate, 'draft': draft, 'test_report': test_report}),
@@ -207,11 +218,14 @@ def build_package(candidate, draft, *, evaluated_at=None, test_report=None, evid
             'brief': brief, 'sources': list(sources.values()), 'test_observations': list(tests.values()),
             'scenes': list(scenes.values()), 'assets': list(assets.values()),
             'recording_steps': list(steps.values()), 'blockers': blockers, 'warnings': warnings,
+            **story_info,
             'narration_characters': narration_characters,
             'review': {'decision': 'pending', 'reviewer': None,
                        'checks': ['逐句核对语义、事实类型和引用是否真正支持结论',
                                   '确认问句/建议没有暗含未经验证的结果承诺',
                                   '核对输入一致、真实耗时、失败情况与账号限制',
+                                  '先看真实成果；逐句核对观众可见变化、情绪点与转场目的，避免机械翻页',
+                                  '核对每句素材区间及补拍项；不把结构检查当作自动语义或成片批准',
                                   '核对素材权利、个人信息遮挡、录屏授权',
                                   '读稿计时，完整看听原片，再冻结最终脚本']}}
 
@@ -238,6 +252,20 @@ def render(package, section):
             lines += [f'## {scene["id"]} · {scene["start"]}–{scene["end"]}秒',
                       '画面：' + escaped(scene['visual']), '目的：' + escaped(scene['purpose']),
                       '素材：' + ', '.join(scene['asset_ids']), '']
+            if package['schema_version'] == 2:
+                for key in ('beat', 'goal', 'hook', 'visible_change', 'emotion', 'transition_purpose', 'fallback'):
+                    lines += [key + '：' + escaped(scene[key])]
+                for cue in scene['lines']:
+                    lines += [f'逐句 {escaped(cue["id"])} · {cue["start_ms"]}–{cue["end_ms"]}毫秒 · {cue["status"]}',
+                              '旁白：' + escaped(cue['narration']), '字幕：' + escaped(cue['subtitle'])]
+                    for ref in cue['evidence']:
+                        lines += [f'画面证据：{escaped(ref["media_id"])} / {escaped(ref["segment_id"])} '
+                                  f'· {ref["in_ms"]}–{ref["out_ms"]}毫秒']
+                    if cue['missing']:
+                        lines += ['所缺画面：' + escaped(cue['missing']['required_shot']),
+                                  '缺镜原因：' + escaped(cue['missing']['reason']),
+                                  '下一步：' + escaped(cue['missing']['next_action'])]
+                lines += ['']
     elif section == 'assets':
         for item in package['assets']:
             lines += [f'## {item["id"]}', *[f'{k}: {escaped(v)}' for k, v in item.items() if k != 'id'], '']
@@ -248,10 +276,20 @@ def render(package, section):
         for step in package['recording_steps']:
             lines += [f'## {step["id"]}', *[f'{k}: {escaped(v)}' for k, v in step.items() if k != 'id'], '']
     elif section == 'review':
-        lines += ['## 阻断项', *['- ' + escaped(x) for x in package['blockers']],
+        lines += ['素材状态：' + escaped(package['story_readiness']), '',
+                  '## 阻断项', *['- ' + escaped(x) for x in package['blockers']],
                   '', '## 警告', *['- ' + escaped(x) for x in package['warnings']],
                   '', '## 人工检查', *['- [ ] ' + escaped(x) for x in package['review']['checks']],
                   '', '结论：pending；审核人：未填写。']
+    elif section == 'material-gaps':
+        lines += ['素材状态：' + escaped(package['story_readiness']), '',
+                  '不是拍摄授权；缺镜须补拍、转移既有素材、改稿或删除，不准用无关翻页顶替。', '']
+        for gap in package['material_gaps']:
+            lines += [f'## {escaped(gap["scene_id"])} / {escaped(gap["line_id"])} · {gap["beat"]}',
+                      '所缺画面：' + escaped(gap['required_shot']),
+                      '原因：' + escaped(gap['reason']), '下一步：' + escaped(gap['next_action']), '']
+        if not package['material_gaps']:
+            lines += ['结构上已绑定素材；仍待完整语义、权利、隐私及成片审查。']
     else:
         raise ValueError('Unknown render section')
     return '\n'.join(lines) + '\n'
@@ -267,6 +305,8 @@ def write_package(package, destination):
         (staging / 'package.json').write_text(json.dumps(package, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
         for section in ('script', 'storyboard', 'assets', 'recording-plan', 'review'):
             (staging / (section + '.md')).write_text(render(package, section), encoding='utf-8')
+        if package['schema_version'] == 2:
+            (staging / 'material-gaps.md').write_text(render(package, 'material-gaps'), encoding='utf-8')
         manifest = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(staging.iterdir())}
         (staging / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
         require(not destination.exists(), 'Output already exists; use a new attempt directory')

@@ -517,5 +517,7 @@ origin暴露handle，自动录制保持拒绝；109项回归通过，缩放/取�
 参见[实施与Claude方案review](docs/scriptwriter-mvp.md)、[编剧岗位](agents/scriptwriter.md)
 及 `.agents/skills/write-tool-script/SKILL.md`。
 
+新任务可用[任务与成果v2](docs/scriptwriter-task-result-v2.md)：结果先行、逐句真实素材区间、可见变化、生活化情绪点与缺镜清单。`needs_materials`不进入冻结剪辑；素材结构齐全仍需语义和成片审核。兼容旧v1，不能把旧草案默认为剪辑就绪。
+
 Gamma提供可执行的60秒待实测拍摄草案，固定虚构周报输入，不虚构功能成功、价格或耗时。
 所有输出仍需人工审核，不自动录屏/发布；独立本地实测证据可回填，但网页观察不能被提升为实测。
