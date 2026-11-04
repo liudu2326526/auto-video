@@ -22,10 +22,15 @@ Pexels/Pixabay检索限具体项目/镜头、公开词、单页少量结果，�
 导入不覆盖源文件；内容哈希去重，来源授权记录分别保留。
 已有素材也要补来源和授权；未知历史不得“洗成”原创或公有领域。
 
-人工看过实际文件后，为本次 commercial/derivatives/distribution/role 填独立 review；
+实际看过文件后，为本次 commercial/derivatives/distribution/role 填独立 review；
 它绑定来源记录摘要和文件 SHA-256，最迟 30 天失效，不能延长授权核验的新鲜度。
 跨用途、超时、缺文件或哈希变化都不能交给剪辑。条件有改变时创建新记录，不刷新旧记录伪装旧审核有效。
 程序只核查结构与明确的操作员声明，不裁决授权真实性、人物同意或画面语义。
+
+用户已明确委托自主选材时，首版 `material_review/v2` 允许严格受限的 Commons CC0 静态情境图
+作 `selected_by_agent`，必须如实署名 agent、记录委托依据和视觉风险，不能冒充 human。
+有可识别人物、私人/第三方文字、醒目标志、敏感情境或付费广告用途时不可用该路径。
+已有拒绝须实际人类复审，不能由助手选择冲销；下载、选择和交付均不构成发布授权。
 
 交付新 handoff 目录：素材副本、`materials.json`、`writer-assets.json`、`editor-assets.json`、
 `attribution.txt`、未填补镜头和处理建议。编剧保留 available_unverified 并核对逐句画面；

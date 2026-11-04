@@ -33,7 +33,7 @@ def main(argv=None):
     handoff.add_argument('--requests', required=True)
     handoff.add_argument('--selection', required=True)
     handoff.add_argument('--output', required=True)
-    verify = sub.add_parser('verify', help='Before editing, recheck handoff files, current license and human review')
+    verify = sub.add_parser('verify', help='Before editing, recheck files, current license and attributed review/selection')
     verify.add_argument('--handoff', required=True, help='Exported materials.json')
     usage = sub.add_parser('used', help='Record actual edit use; exporting a handoff is not use')
     usage.add_argument('--receipt', required=True)

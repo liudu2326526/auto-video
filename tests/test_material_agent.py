@@ -56,6 +56,21 @@ def receipt(row, decision='approved', use=None):
             'visual_review': 'Fixture assertion only; not a real observed public asset', 'reviewer_kind': 'human'}
 
 
+def cc0_selection_fixture():
+    item = record()
+    item['source'].update(provider='Wikimedia Commons', page_url='https://commons.wikimedia.org/wiki/File:Test_only.png')
+    item['rights'].update(license_id='CC0-1.0', license_url='https://creativecommons.org/publicdomain/zero/1.0/deed.en')
+    return item
+
+
+def agent_selection(row, at=AT):
+    r = receipt(row)
+    r.update(schema='material_review/v2', decision='selected_by_agent', reviewer_kind='agent',
+             reviewed_at=stamp(at), delegation_basis='Synthetic test-only delegation assertion, not real user authorization',
+             risk_checks={k: False for k in ['identifiable_people', 'private_or_third_party_text', 'prominent_branding', 'sensitive_context']})
+    return r
+
+
 class MaterialTest(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -211,6 +226,77 @@ class MaterialTest(unittest.TestCase):
         row = self.add(item)
         with self.assertRaises(MaterialError):
             self.approve(row)
+
+    def test_delegated_cc0_selection_is_attributed_not_human_approval(self):
+        row = self.add(cc0_selection_fixture()); r = agent_selection(row)
+        self.library.review(r, AT); self.library.review(r, AT)
+        check = self.library.eligibility(row['id'], USE, AT)
+        self.assertTrue(check['eligible']); self.assertFalse(check['human_usage_approval'])
+        self.assertEqual(check['review_basis'], 'agent_selection')
+        self.assertEqual(check['review']['reviewer_kind'], 'agent')
+        self.assertEqual(len(self.library.history(row['id'])['reviews']), 1)
+
+    def test_agent_selection_does_not_relax_legacy_human_approval(self):
+        row = self.add(cc0_selection_fixture())
+        r = receipt(row); r['reviewer_kind'] = 'agent'
+        with self.assertRaises(MaterialError): self.library.review(r, AT)
+        r = agent_selection(row); r['reviewer_kind'] = 'human'
+        with self.assertRaises(MaterialError): self.library.review(r, AT)
+        r = agent_selection(row); r['decision'] = 'approved'
+        with self.assertRaises(MaterialError): self.library.review(r, AT)
+
+    def test_agent_selection_requires_narrow_scope_and_false_risk_assertions(self):
+        for index, change in enumerate(['provider', 'source_host', 'license', 'license_url', 'paid_ads', 'risk', 'risk_type']):
+            item = cc0_selection_fixture(); item['id'] = 'cc0_' + str(index)
+            if change == 'provider': item['source']['provider'] = 'unknown collection'
+            if change == 'source_host': item['source']['page_url'] = 'https://example.org/test-only'
+            if change == 'license': item['rights']['license_id'] = 'CC-BY-4.0'
+            if change == 'license_url': item['rights']['license_url'] = 'https://example.org/test-only-license'
+            row = self.add(item); r = agent_selection(row)
+            if change == 'paid_ads': r['use_context']['distribution'] = 'paid_advertising'
+            if change == 'risk': r['risk_checks']['identifiable_people'] = True
+            if change == 'risk_type': r['risk_checks']['prominent_branding'] = 0
+            with self.subTest(change=change), self.assertRaises(MaterialError): self.library.review(r, AT)
+
+    def test_agent_selection_fields_hash_and_dates_fail_closed(self):
+        row = self.add(cc0_selection_fixture())
+        variants = []
+        for key in ['delegation_basis', 'risk_checks']:
+            r = agent_selection(row); del r[key]; variants.append(r)
+        for key, value in [('record_digest', '0'*64), ('file_sha256', '0'*64),
+                           ('reviewed_at', stamp(AT-timedelta(seconds=1))), ('expires_at', stamp(AT+timedelta(days=31))),
+                           ('conditions_acknowledged', []), ('delegation_basis', '')]:
+            r = agent_selection(row);r[key]=value;variants.append(r)
+        for r in variants:
+            with self.subTest(receipt=r), self.assertRaises(MaterialError): self.library.review(r, AT)
+        with self.assertRaises(MaterialError): self.library.review([], AT)
+
+    def test_rejection_wins_and_cannot_be_overridden_by_agent_selection(self):
+        row = self.add(cc0_selection_fixture()); self.library.review(agent_selection(row), AT)
+        # A real recorded rejection has priority even at the exact same timestamp.
+        self.library.review(receipt(row, decision='rejected'), AT)
+        self.assertFalse(self.library.eligibility(row['id'], USE, AT)['eligible'])
+        later = AT+timedelta(seconds=1)
+        with self.assertRaises(MaterialError): self.library.review(agent_selection(row, later), later)
+        human = receipt(row);human['reviewed_at'] = stamp(AT+timedelta(seconds=2))
+        self.library.review(human, AT+timedelta(seconds=2))
+        self.library.review(agent_selection(row, AT+timedelta(seconds=3)), AT+timedelta(seconds=3))
+        self.assertFalse(self.library.eligibility(row['id'], USE, AT+timedelta(seconds=3))['human_usage_approval'])
+
+    def test_agent_selected_handoff_preserves_basis_and_rechecks_rejection(self):
+        row = self.add(cc0_selection_fixture());self.library.review(agent_selection(row), AT)
+        req = requests();selected = {'schema':'material_selection/v1','requests_digest':digest(req),
+            'selections':[{'request_id':'req_office','record_id':row['id'],'operator_notes':'Synthetic fixture selection only'}]}
+        out = self.root/'agent-handoff';manifest=self.library.handoff(req,selected,out,AT)
+        self.assertEqual(manifest['materials'][0]['review_basis'],'agent_selection')
+        self.assertFalse(manifest['materials'][0]['human_usage_approval'])
+        self.assertTrue(self.library.verify_handoff(out/'materials.json',AT)['eligible'])
+        writer = json.loads((out/'writer-assets.json').read_text())
+        self.assertEqual(writer[0]['status'],'available_unverified')
+        self.assertIn('agent_selection',writer[0]['rights_review'])
+        rejected = receipt(row,decision='rejected');rejected['reviewed_at']=stamp(AT+timedelta(seconds=1))
+        self.library.review(rejected,AT+timedelta(seconds=1))
+        with self.assertRaises(MaterialError): self.library.verify_handoff(out/'materials.json',AT+timedelta(seconds=1))
 
     def test_sql_records_are_append_only(self):
         row = self.add()

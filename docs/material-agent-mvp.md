@@ -84,7 +84,7 @@ downloaded_at 是操作者声明，imported_at 是入库时间。历史旧素材
 `material_review/v1` 必需字段：schema、record_id、record_digest、file_sha256、reviewer、reviewed_at、
 expires_at、use_context、decision、conditions_acknowledged、risk_review、visual_review、reviewer_kind。
 通过 show 获取确切摘要和文件哈希；操作者实际看素材后填写，不提供自动 approved 模板。
-decision 是 approved/rejected；reviewer_kind 为 human/agent，只有实际 human 审核能批准。
+v1 的 decision 是 approved/rejected；reviewer_kind 为 human/agent，只有实际 human 审核能写 approved。
 商业与修改 bool，distribution 为 internal/public_social/paid_advertising，
 role 为 illustrative_context。review 绑定精确用途；相同用途可跨项目复用，广告等新用途需要新审核。
 use_context 还须明确 share_alike_compatible bool；需要相同方式共享的修改用途不能在其为 false 时批准。
@@ -94,6 +94,28 @@ use_context 还须明确 share_alike_compatible bool；需要相同方式共享�
 ```sh
 python3.12 -m material_agent review --receipt <actual-review.json>
 ```
+
+### 已委托的助手选材（v2）
+
+为落实用户自主选材和迭代的要求，新增 `material_review/v2`；上述人工批准是项目旧版流程，
+不是所有公开 CC0 文件的许可条件。v1 的含义和历史记录保持原样，不将 agent 改名为 human。
+v2 使用相同的文件/元数据/用途/时间/观察字段，另必填 `delegation_basis` 和 `risk_checks`：
+
+- `reviewer_kind=agent`，`decision=selected_by_agent`，不能写 approved 或自称 human。
+- delegation_basis 记录来自可信用户委托的具体选材范围；不是网页内容授权，也不是签名批准网关。
+- 首版只接受 source 为 Wikimedia Commons、公开无登录的 CC0-1.0 静态图；固定官方 CC0 URL，
+  role=illustrative_context，distribution=internal/public_social。视频、音频、其他许可和付费广告不适用。
+- risk_checks 必须完整含 identifiable_people、private_or_third_party_text、prominent_branding、
+  sensitive_context 四项真实 bool，全部为 false。这些是助手看过实际文件后的归因声明，
+  不是程序自动检测或第三方权益保证；任何风险不明就不可用该路径。
+- 仍核对所有许可条件、商业/修改范围、当前有效期、实际取得日期和不可变哈希；
+  不覆盖来源记录、已写的 human 观察、拒绝或撤回，不允许代理选择推翻同用途已有拒绝。
+  拒绝后只能由真实人类复审，再产生新交付，不能重放旧选择。
+
+eligibility/handoff 明确返回 `review_basis=agent_selection`、`human_usage_approval=false`；
+writer-assets 的依据保留该标记，仍是 available_unverified，不是产品证据或最终成片批准。
+handoff/verify/used 继续绑定并复查确切选择收据。不存在自动联网、自动填批准或自动发布。
+助手可自行在已委托范围内选清晰低风险素材，实际听审、最终隐私和发布等独立门槛保持。
 
 每次复用、handoff 和 used 检查哈希、完整元数据摘要、当前用途、最新审核、许可核验日期。
 许可和审核最长 30 天，审核期限不得超出许可核验后的 30 天；这只是保守的本地新鲜度规则，

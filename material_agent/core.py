@@ -380,10 +380,12 @@ class Library:
 
     def review(self, receipt, at=None):
         at = at or now()
-        fields(receipt, ['schema', 'record_id', 'record_digest', 'file_sha256', 'reviewer', 'reviewed_at',
+        agent_selection = isinstance(receipt, dict) and receipt.get('schema') == 'material_review/v2'
+        required = ['schema', 'record_id', 'record_digest', 'file_sha256', 'reviewer', 'reviewed_at',
                          'expires_at', 'use_context', 'decision', 'conditions_acknowledged', 'risk_review',
-                         'visual_review', 'reviewer_kind'])
-        need(receipt['schema'] == 'material_review/v1', 'Unknown review schema')
+                         'visual_review', 'reviewer_kind']
+        fields(receipt, required + (['delegation_basis', 'risk_checks'] if agent_selection else []))
+        need(receipt['schema'] in {'material_review/v1', 'material_review/v2'}, 'Unknown review schema')
         row = self.get(receipt['record_id'])
         need(receipt['record_digest'] == row['digest'] and row['blob_sha256'] is not None
              and receipt['file_sha256'] == row['blob_sha256'], 'Review must bind exact metadata and local bytes')
@@ -398,11 +400,15 @@ class Library:
         acquired = json.loads(row['download_record'])
         need(checked >= max(instant(row['added_at']), instant(row['imported_at']), instant(acquired['downloaded_at'])),
              'Review cannot predate metadata registration or acquisition/import of local bytes')
-        need(receipt['decision'] in {'approved', 'rejected'}, 'Explicit review decision required')
+        need(receipt['decision'] in ({'selected_by_agent'} if agent_selection else {'approved', 'rejected'}),
+             'Explicit versioned review/selection decision required')
         need(receipt['reviewer_kind'] in {'human', 'agent'}, 'Explicit reviewer kind required')
         strings(receipt['conditions_acknowledged'])
-        if receipt['decision'] == 'approved':
-            need(receipt['reviewer_kind'] == 'human', 'Approved requires an actual human review; agent notes are not clearance')
+        if agent_selection:
+            self._agent_selection_scope(receipt, row['document'])
+        if receipt['decision'] in {'approved', 'selected_by_agent'}:
+            if not agent_selection:
+                need(receipt['reviewer_kind'] == 'human', 'Approved requires an actual human review; agent notes are not clearance')
             rights = row['document']['rights']
             need(set(receipt['conditions_acknowledged']) == set(rights['restrictions']), 'Acknowledge every license restriction')
             issues = self._rights_issues(row['document'], receipt['use_context'], at)
@@ -417,14 +423,39 @@ class Library:
             previous = json.loads(previous['receipt'])
             if canonical(previous) == canonical(receipt):
                 return receipt  # Idempotence must not append/promote an old review.
+            need(not (agent_selection and previous['decision'] == 'rejected'),
+                 'Agent selection cannot supersede a rejection; actual human re-review is required')
             prior_time = instant(previous['reviewed_at'])
             need(checked > prior_time or (checked == prior_time and receipt['decision'] == 'rejected'
-                                         and previous['decision'] == 'approved'),
+                                         and previous['decision'] in {'approved', 'selected_by_agent'}),
                  'Old approval/review replay forbidden; a new approval must follow the latest review in time')
         with self.db:
             self.db.execute('INSERT INTO reviews(record_id,context_digest,receipt) VALUES (?,?,?)',
                             (row['id'], digest(receipt['use_context']), canonical(receipt)))
         return receipt
+
+    @staticmethod
+    def _agent_selection_scope(receipt, record):
+        """Attributed delegated selection, never a fabricated human approval.
+
+        Narrow first implementation: public CC0 still illustrations without
+        declared people/private text/branding/sensitive context, not paid ads.
+        Risk fields remain the observing operator's assertions, not detection.
+        """
+        need(receipt['reviewer_kind'] == 'agent', 'V2 selection must identify the agent operator')
+        text(receipt['delegation_basis'], 4000)
+        checks = receipt['risk_checks']
+        fields(checks, ['identifiable_people', 'private_or_third_party_text', 'prominent_branding', 'sensitive_context'])
+        need(all(type(v) is bool and not v for v in checks.values()), 'This case requires human review')
+        use, rights, source = receipt['use_context'], record['rights'], record['source']
+        need(record['media_type'] == 'image' and source['access'] == 'public_no_login'
+             and source['provider'] == 'Wikimedia Commons'
+             and urlsplit(source['page_url']).hostname == 'commons.wikimedia.org'
+             and rights['license_id'] == 'CC0-1.0'
+             and rights['license_url'] == 'https://creativecommons.org/publicdomain/zero/1.0/deed.en'
+             and rights['share_alike_required'] is False
+             and use['role'] == 'illustrative_context' and use['distribution'] in {'internal', 'public_social'},
+             'Agent selection is limited to public CC0 Commons still illustrations, not product evidence or paid ads')
 
     @staticmethod
     def _rights_issues(record, use, at):
@@ -470,18 +501,23 @@ class Library:
         review = self.db.execute('SELECT receipt FROM reviews WHERE record_id=? AND context_digest=? ORDER BY seq DESC LIMIT 1',
                                  (record_id, digest(use))).fetchone()
         if review is None:
-            issues.append('Human review pending for this exact use context')
+            issues.append('Review/attributed delegated selection pending for this exact use context')
         else:
             review = json.loads(review['receipt'])
-            if review['decision'] != 'approved':
+            if review.get('schema') == 'material_review/v2' and review['decision'] == 'selected_by_agent':
+                try: self._agent_selection_scope(review, row['document'])
+                except MaterialError as exc: issues.append(str(exc))
+            elif review['decision'] != 'approved':
                 issues.append('Latest review rejected this use context')
             if not instant(review['reviewed_at']) <= at < instant(review['expires_at']):
-                issues.append('Human review expired/not yet valid')
+                issues.append('Review/selection expired/not yet valid')
             if review['record_digest'] != row['digest'] or review['file_sha256'] != row['blob_sha256']:
                 issues.append('Review no longer matches metadata/bytes')
         return {'record_id': record_id, 'eligible': not issues, 'blockers': issues,
                 'path': str(path) if path else None, 'sha256': row['blob_sha256'],
-                'record_digest': row['digest'], 'review': review}
+                'record_digest': row['digest'], 'review': review,
+                'human_usage_approval': bool(review and review['decision'] == 'approved' and review['reviewer_kind'] == 'human'),
+                'review_basis': 'agent_selection' if review and review['decision'] == 'selected_by_agent' else 'human_review' if review and review['decision'] == 'approved' else 'none'}
 
     def search(self, query, use, media_types=None, limit=10, at=None):
         text(query, 2000)
@@ -549,7 +585,7 @@ class Library:
                 target = staging / relative
                 shutil.copyfile(source, target)
                 need(file_hash(target) == check['sha256'], 'Blob changed during handoff')
-                basis = record['rights']['license_id'] + '; source=' + record['source']['page_url']
+                basis = record['rights']['license_id'] + '; source=' + record['source']['page_url'] + '; review_basis=' + check['review_basis']
                 assets.append({'id': request['asset_id'], 'description': record['description'],
                                'origin': record['source']['page_url'], 'rights_review': basis + '; see materials.json exact review',
                                'privacy_review': check['review']['risk_review'], 'status': 'available_unverified'})
@@ -561,6 +597,7 @@ class Library:
                               'asset_id': request['asset_id'], 'record_id': row['id'], 'record_digest': row['digest'],
                               'path': relative, 'sha256': check['sha256'], 'source': record['source'],
                               'rights': record['rights'], 'review': check['review'], 'risks': record['risks'],
+                              'review_basis': check['review_basis'], 'human_usage_approval': check['human_usage_approval'],
                               'operator_notes': notes, 'role': 'illustrative_context', 'product_test_evidence': False,
                               'editor_video_candidate': compatible, 'requires_media_preparation': not compatible})
             result = {'schema': 'material_handoff/v1', 'project_id': requests['project_id'], 'created_at': stamp(at),
