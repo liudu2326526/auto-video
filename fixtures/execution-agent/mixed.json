@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "job_id": "controlled-demo",
+  "tool_id": "file-transform-fixture",
+  "tool_version": "0.1.0",
+  "script_id": "mixed-outcomes",
+  "input_file": "input.txt",
+  "input_rights": "generated_fixture",
+  "steps": [
+    {
+      "step_id": "uppercase",
+      "operation_key": "uppercase-output",
+      "adapter": "file_transform",
+      "scope": "local_file",
+      "required": true,
+      "params": {"transform": "uppercase"},
+      "expect": {"kind": "text_equals", "value": "HELLO 星屿\n"}
+    },
+    {
+      "step_id": "wrong-output",
+      "operation_key": "wrong-output",
+      "adapter": "file_transform",
+      "scope": "local_file",
+      "required": true,
+      "params": {"transform": "uppercase", "fixture_fault": "wrong_result"},
+      "expect": {"kind": "text_equals", "value": "HELLO 星屿\n"}
+    },
+    {
+      "step_id": "input-limit",
+      "operation_key": "input-limit",
+      "adapter": "file_transform",
+      "scope": "local_file",
+      "required": false,
+      "params": {"transform": "uppercase", "max_input_bytes": 1},
+      "expect": {"kind": "text_equals", "value": "HELLO 星屿\n"}
+    }
+  ]
+}

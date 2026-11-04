@@ -2,15 +2,31 @@
 import hashlib
 import json
 import os
+import plistlib
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 from .core import RecordingError, atomic_json, root_path, private_dir, private_file, new_private_file
 
 SOURCE = Path(__file__).parent / 'native' / 'WindowRecorder.swift'
 IDENTITY_SOURCE = Path(__file__).parent / 'native' / 'IdentityPolicy.swift'
+DEADLINE_SOURCE = Path(__file__).parent / 'native' / 'RecordingDeadline.swift'
+APP_NAME = 'AutoVideoRecorder.app'
+APP_INFO = {
+    'CFBundleExecutable': 'WindowRecorder',
+    'CFBundleIdentifier': 'org.autovideo.WindowRecorder',
+    'CFBundleName': 'Auto Video Recorder',
+    'CFBundleDisplayName': 'Auto Video Recorder',
+    'CFBundlePackageType': 'APPL',
+    'CFBundleVersion': '3',
+    'CFBundleShortVersionString': '0.3',
+    'LSMinimumSystemVersion': '15.2',
+    'NSHighResolutionCapable': True,
+    'NSPrincipalClass': 'NSApplication',
+}
 
 
 def build(root):
@@ -21,26 +37,50 @@ def build(root):
     private = root / '.recording-state'
     private_dir(private, create=True)
     private_dir(private / 'build', create=True)
-    combined_source = IDENTITY_SOURCE.read_text() + '\n' + SOURCE.read_text()
-    digest = hashlib.sha256(combined_source.encode()).hexdigest()
+    combined_source = IDENTITY_SOURCE.read_text() + '\n' + DEADLINE_SOURCE.read_text() + '\n' + SOURCE.read_text()
+    # Packaging changes invalidate the cache as well as native source changes.
+    digest = hashlib.sha256(combined_source.encode() + plistlib.dumps(APP_INFO, sort_keys=True)).hexdigest()
     folder = private / 'build' / digest
     private_dir(folder, create=True)
-    target = folder / 'WindowRecorder'
-    if target.exists():
+    app = folder / APP_NAME
+    for directory in (app, app / 'Contents', app / 'Contents' / 'MacOS'):
+        private_dir(directory, create=True)
+    info = app / 'Contents' / 'Info.plist'
+    if info.exists() or info.is_symlink():
+        private_file(info)
+        try:
+            actual = plistlib.loads(info.read_bytes())
+        except Exception as exc:
+            raise RecordingError('Incomplete or invalid native app metadata; not overwritten') from exc
+        if actual != APP_INFO:
+            raise RecordingError('Unexpected native app metadata; not overwritten')
+    else:
+        with new_private_file(info) as f:
+            f.write(plistlib.dumps(APP_INFO, sort_keys=True).decode('utf-8'))
+            f.flush(); os.fsync(f.fileno())
+    target = app / 'Contents' / 'MacOS' / 'WindowRecorder'
+    if target.exists() or target.is_symlink():
         private_file(target)
+        if not os.access(target, os.X_OK):
+            raise RecordingError('Native app executable is not executable')
         return target
-    # Separate output name avoids publishing incomplete compiler output.
-    temp = folder / ('WindowRecorder-' + str(os.getpid()))
-    combined = folder / ('WindowRecorder-' + str(os.getpid()) + '.swift')
-    with new_private_file(combined) as f: f.write(combined_source)
-    r = subprocess.run([compiler, '-swift-version', '5', '-target', 'arm64-apple-macos15.2',
-                        '-module-cache-path', str(folder / 'modules'), str(combined), '-o', str(temp)],
-                       text=True, capture_output=True, timeout=120, umask=0o077)
-    if r.returncode: raise RecordingError('Swift backend compilation failed: ' + r.stderr[-4000:])
-    private_file(temp)
-    try: os.link(temp, target)
-    except FileExistsError: pass
-    finally: temp.unlink(missing_ok=True)
+    private_dir(folder / 'modules', create=True)
+    # A fresh private directory prevents a stale predictable compiler-output
+    # filename (including a symlink) from becoming an overwrite destination.
+    with tempfile.TemporaryDirectory(prefix='compile-', dir=folder) as tmp:
+        combined = Path(tmp) / 'main.swift'
+        temp = Path(tmp) / 'WindowRecorder'
+        with new_private_file(combined) as f: f.write(combined_source)
+        r = subprocess.run([compiler, '-swift-version', '5', '-target', 'arm64-apple-macos15.2',
+                            '-module-cache-path', str(folder / 'modules'), str(combined), '-o', str(temp)],
+                           text=True, capture_output=True, timeout=120, umask=0o077)
+        if r.returncode: raise RecordingError('Swift backend compilation failed: ' + r.stderr[-4000:])
+        private_file(temp)
+        try: os.link(temp, target)
+        except FileExistsError: pass
+    private_file(target)
+    if not os.access(target, os.X_OK):
+        raise RecordingError('Native app executable is not executable')
     return target
 
 

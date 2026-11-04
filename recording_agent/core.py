@@ -16,7 +16,7 @@ from pathlib import Path
 from .media import inspect_media, assess_duration
 
 ACTIVE = {'starting', 'recording', 'stopping'}
-TERMINAL = {'validated', 'partial', 'failed', 'quarantined', 'unknown'}
+TERMINAL = {'validated', 'source_validated', 'partial', 'failed', 'quarantined', 'unknown'}
 REPO = Path(__file__).resolve().parents[1]
 
 
@@ -118,7 +118,23 @@ class DesktopLock:
 def validate_spec(spec):
     expected = {'request_id', 'take_id', 'job_id', 'upstream_test_run_id', 'mode',
                 'duration_seconds', 'expected_bundle_id', 'expected_owner_pid'}
-    if set(spec) != expected: raise RecordingError('Unknown/missing recording parameters')
+    optional = {'validation_only', 'expected_window_id', 'expected_owner_launch_epoch',
+                'expected_display_id', 'expected_bounds', 'browser_ui_policy', 'expected_window_title'}
+    if not expected.issubset(spec) or set(spec) - expected - optional:
+        raise RecordingError('Unknown/missing recording parameters')
+    if 'validation_only' in spec and type(spec['validation_only']) is not bool:
+        raise RecordingError('validation_only must be boolean')
+    explicit_keys = optional - {'validation_only'}
+    if spec['mode'] != 'explicit' and set(spec) & explicit_keys:
+        raise RecordingError('Explicit target parameters require explicit mode')
+    if 'browser_ui_policy' in spec or 'expected_window_title' in spec:
+        if spec.get('browser_ui_policy') != 'local_raw_then_crop' or spec['mode'] != 'explicit' or spec['expected_bundle_id'] != 'com.google.Chrome':
+            raise RecordingError('Local browser raw/crop opt-in requires explicit Chrome window scope')
+        title = spec.get('expected_window_title')
+        if not isinstance(title, str) or not title.strip() or len(title) > 200 or any(ord(c) < 32 for c in title):
+            raise RecordingError('Local browser raw/crop opt-in requires exact approved window title')
+        if spec.get('expected_window_id') is None or spec.get('expected_owner_launch_epoch') is None:
+            raise RecordingError('Local browser raw/crop opt-in requires validated window and launch identity')
     for field in ('request_id', 'take_id', 'job_id'): identifier(spec[field])
     if spec['upstream_test_run_id'] is not None: identifier(spec['upstream_test_run_id'])
     duration = spec['duration_seconds']
@@ -127,13 +143,28 @@ def validate_spec(spec):
     if spec['mode'] == 'fixture':
         if spec['expected_bundle_id'] is not None or spec['expected_owner_pid'] is not None:
             raise RecordingError('Fixture cannot select external owners')
-    elif spec['mode'] == 'picker':
+    elif spec['mode'] in {'picker', 'explicit'}:
         bundle, pid = spec['expected_bundle_id'], spec['expected_owner_pid']
         if not isinstance(bundle, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9.-]{0,199}', bundle):
             raise RecordingError('Picker needs an explicit expected bundle ID')
         if type(pid) is not int or pid <= 0: raise RecordingError('Picker needs an explicit expected owner PID')
+        if spec['mode'] == 'explicit':
+            bounds = spec.get('expected_bounds')
+            if not isinstance(bounds, list) or len(bounds) != 4 or any(type(v) not in (int, float) or not math.isfinite(v) for v in bounds) or min(bounds[2:]) <= 0:
+                raise RecordingError('Explicit mode needs finite x,y,width,height bounds')
+            display = spec.get('expected_display_id')
+            if type(display) is not int or not 0 < display <= 0xffffffff:
+                raise RecordingError('Explicit mode needs an approved display ID')
+            window = spec.get('expected_window_id')
+            launch = spec.get('expected_owner_launch_epoch')
+            if window is not None and (type(window) is not int or not 0 < window <= 0xffffffff):
+                raise RecordingError('Invalid expected CGWindowID')
+            if launch is not None and (type(launch) not in (int, float) or not math.isfinite(launch) or launch <= 0):
+                raise RecordingError('Invalid expected launch identity')
+            if not spec.get('validation_only', False) and (window is None or launch is None):
+                raise RecordingError('Explicit recording requires validated window and launch identity')
     else:
-        raise RecordingError('Only fixture or system single-window picker modes are supported')
+        raise RecordingError('Only fixture, picker or explicit single-window modes are supported')
     return spec
 
 
@@ -248,6 +279,31 @@ class Recorder:
         finished = [e for e in events if e.get('event') == 'recording_finished']
         sources = [e for e in events if e.get('event') == 'source_verified']
         failures = [e for e in events if e.get('event') in {'blocked_or_failed', 'interference', 'timeout_unknown'}]
+        if take['spec'].get('validation_only', False):
+            complete = [e for e in events if e.get('event') == 'selection_validation_completed' and e.get('capture_started') is False]
+            no_capture = not any(e.get('event') in {'start_intent', 'recording_started', 'recording_finished'} for e in events)
+            no_media = not any(p.suffix.lower() in {'.mp4', '.mov', '.mkv'} for p in folder.iterdir())
+            try:
+                if result.get('exit_code') != 0 or not sources or not complete or failures or not no_capture or not no_media:
+                    raise RecordingError(failures[-1].get('reason', failures[-1]['event']) if failures else 'No capture-free selection completion')
+                source = sources[-1]['source']
+                self._check_source(take['spec'], source)
+                receipt = {'schema_version': 1, 'artifact_kind': 'source_validation',
+                           'take_id': take_id, 'source': source, 'capture_started': False,
+                           'tool_test_status': 'not_performed', 'validated_utc': now()}
+                path = folder / 'selection.json'
+                if path.exists() or path.is_symlink():
+                    private_file(path)
+                    previous = json.loads(path.read_text())
+                    if any(previous.get(k) != receipt.get(k) for k in ('schema_version', 'artifact_kind', 'take_id', 'source', 'capture_started')):
+                        raise RecordingError('Existing source receipt conflicts')
+                else: atomic_json(path, receipt)
+                take.update(state='source_validated', selection=str(path), capture_started=False)
+            except Exception as exc:
+                take.update(state='quarantined', reason=str(exc)[:500])
+            take.update(ended_utc=now(), backend_exit_code=result.get('exit_code'))
+            with self.store.transaction(): self.store.put(take)
+            return take
         good = result.get('exit_code') == 0 and finished and sources and not failures and finished[-1].get('clean') is True
         take['ended_utc'] = now()
         take['backend_exit_code'] = result.get('exit_code')
@@ -265,10 +321,7 @@ class Recorder:
                 media = self.validator(media_path, take['spec']['duration_seconds'], allow_early_stop=explicit_stop)
                 media.update(assess_duration(media['duration_seconds'], take['spec']['duration_seconds'], explicit_stop))
                 source = sources[-1]['source']
-                if source.get('mode') != take['spec']['mode'] or not source.get('window_id') or not source.get('owner_pid'):
-                    raise RecordingError('Invalid source identity')
-                if take['spec']['mode'] == 'picker' and (source.get('bundle_id') != take['spec']['expected_bundle_id'] or source['owner_pid'] != take['spec']['expected_owner_pid']):
-                    raise RecordingError('Recorded owner does not match approved target')
+                self._check_source(take['spec'], source)
                 if partial.exists():
                     if target.exists() or target.is_symlink():
                         private_file(target, single_link=False)
@@ -309,6 +362,27 @@ class Recorder:
         if take['state'] in {'validated', 'partial'}: (folder / 'raw.partial.mp4').unlink(missing_ok=True)
         return take
 
+    @staticmethod
+    def _check_source(spec, source):
+        if source.get('mode') != spec['mode'] or type(source.get('window_id')) is not int or not source['window_id'] or type(source.get('owner_pid')) is not int or not source['owner_pid']:
+            raise RecordingError('Invalid source identity')
+        if spec['mode'] in {'picker', 'explicit'} and (source.get('bundle_id') != spec['expected_bundle_id'] or source['owner_pid'] != spec['expected_owner_pid']):
+            raise RecordingError('Recorded owner does not match approved target')
+        if spec['mode'] == 'explicit':
+            if any(source.get(k) is not False for k in ('audio', 'microphone', 'camera', 'include_child_windows')) or source.get('filter') != 'desktopIndependentWindow':
+                raise RecordingError('Explicit source exceeds silent single-window scope')
+            if source.get('bounds') != spec['expected_bounds'] or source.get('display_id') != spec['expected_display_id']:
+                raise RecordingError('Source geometry/display does not match approved target')
+            if spec.get('expected_window_id') is not None and source['window_id'] != spec['expected_window_id']:
+                raise RecordingError('Source window does not match validated target')
+            launch = source.get('process_launch_epoch')
+            if type(launch) not in (int, float) or not math.isfinite(launch) or launch <= 0:
+                raise RecordingError('Source launch identity unavailable')
+            if spec.get('expected_owner_launch_epoch') is not None and launch != spec['expected_owner_launch_epoch']:
+                raise RecordingError('Source process identity changed after validation')
+            if spec.get('browser_ui_policy') == 'local_raw_then_crop' and (source.get('browser_ui_policy') != 'local_raw_then_crop' or source.get('window_title_verified') is not True):
+                raise RecordingError('Local browser raw/crop framing or title evidence missing')
+
     def status(self, take_id):
         take = self.store.get(take_id)
         if take['state'] in ACTIVE:
@@ -348,7 +422,7 @@ class Recorder:
         """Reconcile only after both supervisor and inherited native lease are gone."""
         with DesktopLock(self.lock_path):
             take = self.store.get(take_id)
-            if take['state'] in {'validated', 'partial', 'failed', 'quarantined'}: return take
+            if take['state'] in {'validated', 'source_validated', 'partial', 'failed', 'quarantined'}: return take
             events_path = self.store.folder(take_id) / 'backend-events.jsonl'
             if events_path.exists() or events_path.is_symlink(): private_file(events_path)
             if not events_path.exists() or events_path.stat().st_size > 2 * 1024 * 1024:

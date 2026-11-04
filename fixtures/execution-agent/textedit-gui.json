@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "job_id": "safe-textedit-gui",
+  "tool_id": "apple-textedit",
+  "tool_version": "1.20 (409)",
+  "script_id": "textedit-supervised-two-outcomes",
+  "input_file": "input.txt",
+  "input_rights": "generated_fixture",
+  "test_kind": "controlled_fixture",
+  "steps": [
+    {
+      "step_id": "uppercase",
+      "operation_key": "gui-uppercase",
+      "adapter": "supervised_cua",
+      "scope": "local_ui",
+      "required": true,
+      "params": {},
+      "expect": {
+        "kind": "text_equals",
+        "value": "HELLO 星屿\n"
+      },
+      "instruction": "Open AV-Test-Result-One.txt in TextEdit, select all, Edit > Transformations > Make Upper Case, save, inspect result; only this generated file."
+    },
+    {
+      "step_id": "injected-mismatch",
+      "operation_key": "gui-injected-mismatch",
+      "adapter": "supervised_cua",
+      "scope": "local_ui",
+      "required": true,
+      "params": {},
+      "expect": {
+        "kind": "text_equals",
+        "value": "HELLO 星屿\n"
+      },
+      "instruction": "Controlled negative case: open AV-Test-Result-Two.txt, replace with HELLO 星屿 -- deliberate mismatch plus newline, save. Frozen expectation intentionally remains HELLO 星屿 plus newline; preserve failure."
+    }
+  ]
+}

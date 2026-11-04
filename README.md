@@ -1,10 +1,21 @@
 # Auto Video：基于 Codex Agent Team 的工具实测视频生产方案
 
-版本：v0.1 · 整理日期：2026-11-02
+架构基线：v0.1 · 整理日期：2026-11-02 · Mac MVP 状态更新：2026-11-04
 
 通过 Agent Team 完成工具发现、素材收集、软件实测与录屏、视频剪辑和平台发布，优先面向中文工具实测内容，首批目标平台为抖音和小红书。
 
-**当前状态：已有工具发现 helper；单窗口录屏 helper 已通过离线测试、编译、一次自建安全窗口CLI验证和实现review，尚未验收端到端生产系统。** 已完成参考视频抽帧观察、架构设计及早期自建窗口录屏技术探针；真实软件实测、完整录屏生产链路、剪映导出和账号发布仍未验收。下文总体架构中的目录、配置、接口及数据结构，除明确标为已实现的 MVP 外仍为建议或示例。
+**当前有工具发现、Mac 单窗口录屏、实测执行和剪映剪辑的独立 helper/Skill，尚未验收无人值守端到端生产系统。** 本机已完成受限 Gamma 窗口实录及本地去顶部裁剪、TextEdit 原创样例的真实 GUI 实测回填、剪映 12 秒测试片的原生编辑/导出/重开及用户验收。它们各自的验证范围不同，不能推导出任意软件、所有素材或账号发布已通过。下文总体架构除明确标为已实现的 MVP 外仍为建议或示例；原片、成片、工程、日志、凭据和运行数据库均不随源码提交。
+
+## 当前 Mac 实现入口
+
+| 模块 | 命令 | 已验证范围与说明 |
+| --- | --- | --- |
+| 工具发现 | `python3.12 -m discovery_agent --help` | [来源、门槛和候选](docs/tool-discovery-agent.md) |
+| 单窗口录屏 | `python3.12 -m recording_agent --help` | [MVP](docs/recording-mvp.md)、[Gamma 原片与裁剪](docs/gamma-local-window-crop.md)；默认无声，不回退全屏 |
+| 实测执行 | `python3.12 -m execution_agent --help` | [状态与证据契约](docs/test-execution-agent.md)、[TextEdit 真实 GUI 验证](docs/test-execution-agent-gui-validation.md)；GUI 由 Skill 监督执行 |
+| 剪映剪辑 | `python3.12 -m editing_agent --help` | [输入协议](docs/editing-agent-mvp.md)、[剪映原生验证](docs/editing-agent-jianying-validation.md)；CLI 准备/检查，CUA 操作剪映 |
+
+实测 Skill 为 `.agents/skills/execute-tool-test/`，剪辑 Skill 为 `.agents/skills/edit-video/`。当前模块采用各自显式版本契约，尚无自动跨 Agent 调度、统一 SQL 或发布网关；操作员必须核对真实结果、素材来源和脚本映射。已有 VFR 录屏不能直接当作剪辑模块要求的 30fps CFR 输入。下文测试数量和实验结果保留历史时点，不表示所有最新功能或当前执行环境均已通过。
 
 ## 技术方案文档
 
@@ -488,4 +499,12 @@ ready → submitting → accepted → reviewing → published
 
 实际 CLI：`python3.12 -m recording_agent --help`，提供同步 `record`、持久化 `status/stop/recover` 与仅编译的 `build`。本机 Swift/ScreenCaptureKit 后端只支持显式单窗口、默认无声，权限/来源变化即停，不回退全屏；媒体和状态必须位于 Git 工作树之外。
 
-用法、状态机与限制见 [录屏 MVP](docs/recording-mvp.md)，岗位见 [operator 指令](agents/record-tool-demo.md)，可复用 Skill 为 `.agents/skills/record-tool-demo/SKILL.md`。77项测试和编译通过；两次录前失败保留后，唯一一次实际fixture录屏正常完成，详见 [本机MVP验证](docs/recording-mvp-validation.md)。当前不访问 Gamma 或任何产品账号。`validated` 要求媒体与时长计划通过，但不证明真实工具功能成功；显式早停为partial。异步 start 服务、OS 隔离/完整网关、系统声音和业务 SQL 集成均未实现。
+浏览器内容区排除要求正在实施。由于AX与帧无法原子关联，当前新的Chrome正式录制在建流前拒绝，避免沿用包含浏览器栏的整窗路径；历史结果不受影响。裁切和有界内存编码组件测试通过，但Chrome端到端能力未完成，见[安全原型与阻塞](docs/browser-content-capture.md)。
+
+用法、状态机与限制见 [录屏 MVP](docs/recording-mvp.md)，岗位见 [operator 指令](agents/record-tool-demo.md)，可复用 Skill 为 `.agents/skills/record-tool-demo/SKILL.md`。初始77项测试和fixture历史结果见 [本机MVP验证](docs/recording-mvp-validation.md)；85项系统选窗阻塞见 [GUI适配记录](docs/recording-gui-adaptation.md)，显式单窗及无捕获接口见 [实施说明](docs/recording-explicit-window.md)。现已修复停止定时器的隐含合并容差，93项测试通过；Gamma复测实际24.496667秒，位于25±0.75秒门槛内，267帧、零音轨、完整解码通过，详见 [停止时序修复与复测](docs/recording-stop-timing.md)。旧26.25秒隔离片未改写。全部267帧本机自动敏感特征检测无报警，完整人工视觉审看仍pending。`validated` 要求媒体与时长计划通过，不证明真实工具成功；显式早停为partial。异步start、OS隔离、系统声音和业务SQL集成均未实现。
+
+
+实验性浏览器命令：`browser-probe --kind fixture`仅录自建fixture，`--kind gamma-identity`只读取
+Capture Handle元数据并立即停流，`browser-probe-status`查询不可覆盖的实验收据。实际Gamma未向本次捕获
+origin暴露handle，自动录制保持拒绝；109项回归通过，缩放/取消/鼠标和新版预览实测尚待完成。
+[CLI边界、Claude草稿与最新验证](docs/browser-viewport-validation.md)。不代表正常record后端已支持第三方浏览器内容区。

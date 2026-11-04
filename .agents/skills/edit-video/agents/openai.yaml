@@ -1,0 +1,3 @@
+interface:
+  display_name: "Mac 剪映剪辑 Agent"
+  short_description: "按冻结分镜准备素材、操作 Mac 剪映、保存工程并核验真实导出"

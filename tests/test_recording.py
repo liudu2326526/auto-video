@@ -363,5 +363,22 @@ class MediaTests(unittest.TestCase):
         self.assertEqual(media['full_decode_exit'], 0)
         self.assertEqual(len(media['presentation_timestamps_seconds']), 5)
 
+    @unittest.skipUnless(shutil.which('ffmpeg') and shutil.which('ffprobe'), 'Existing media tools required')
+    def test_actual_vfr_close_frame_pairs_preserve_pts_and_decode(self):
+        self.path.unlink()
+        # Uneven close frame pairs reproduce output-timebase quantization in
+        # the null muxer without capturing any screen or using private footage.
+        subprocess.run([shutil.which('ffmpeg'), '-nostdin', '-v', 'error', '-f', 'lavfi', '-i',
+                        'testsrc2=s=64x64:r=600:d=0.04', '-vf', r'setpts=(floor(N/2)*50+mod(N\,2))/600/TB',
+                        '-frames:v', '20', '-fps_mode', 'passthrough', '-enc_time_base:v', '1:600',
+                        '-video_track_timescale', '600', '-an', '-c:v', 'libx264', str(self.path)],
+                       check=True, timeout=10, umask=0o077, capture_output=True)
+        media = inspect_media(self.path, 1)
+        pts = media['presentation_timestamps_seconds']
+        self.assertEqual(len(pts), 20)
+        self.assertLess(pts[1] - pts[0], 0.01)
+        self.assertGreater(pts[2] - pts[1], 0.05)
+        self.assertEqual(media['full_decode_exit'], 0)
+
 
 if __name__ == '__main__': unittest.main()

@@ -68,7 +68,8 @@ def inspect_media(path, duration_limit, runner=subprocess.run, *, allow_early_st
     except (KeyError, TypeError, json.JSONDecodeError, OverflowError) as exc:
         raise MediaError('Malformed ffprobe metadata') from exc
     decoded = command([ffmpeg, '-nostdin', '-v', 'error', '-xerror', '-i', str(path),
-                       '-map', '0:v:0', '-f', 'null', '-'], 20 + duration_limit * 3)
+                       '-map', '0:v:0', '-fps_mode', 'passthrough', '-enc_time_base:v', 'demux',
+                       '-f', 'null', '-'], 20 + duration_limit * 3)
     if decoded.stderr.strip():
         raise MediaError('Full decode emitted errors')
     digest = hashlib.sha256()

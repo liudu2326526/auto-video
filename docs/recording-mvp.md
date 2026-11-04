@@ -1,5 +1,7 @@
 # 单窗口录屏 operator MVP
 
+2026-11-03 本地增量：后端为私有运行目录内的标准 GUI `.app`，无参数启动只显示安全Idle窗口；picker注册/呈现仅在点击选择按钮后发生。85项测试、实际编译、当前完整路径的computer use绑定、真实录前取消与自动超时通过；Gamma正式尝试仍未取得系统选窗回调，未开录、无MP4。以下原77项与fixture结论为首次验收历史，增量事实与限制见 [GUI适配记录](recording-gui-adaptation.md)。
+
 状态：2026-11-02，本机原生实现，77项离线测试与编译通过，已完成一次自建安全窗口CLI录屏并通过父助手最终review。基线 main `289686fca6422c064f2bbfc0af1de93a5b7ad880`，独立分支 `work/recording-agent-mvp`；已合入 reviewed Mac 方案/探针，不合并录屏代码到 main。代码由 Codex 实施，未调用 Claude 编码。真实结果见 [MVP验证记录](recording-mvp-validation.md)。
 
 ## 实际入口与支持范围
@@ -62,7 +64,7 @@ recover 只在继承桌面锁已释放后读取有界日志并查验 clean finis
 
 可复用 Skill：`.agents/skills/record-tool-demo/SKILL.md`，岗位说明 `agents/record-tool-demo.md`。顺序为 researcher 交接 → 场景/固定输入/权利 → 真实探索 → 真实输出内容验证 → 拍摄计划 → 正式 take → 本机媒体/视觉检查 → producer 根据实际素材写最终分镜。CLI 没有执行或验证真实工具的能力，Skill 不能把记录文件冒充软件实测。
 
-当前未实现：异步 start 服务、无人值守/分布式网关、OS 隔离/epoch fencing、自动软件操作/登录、可信人类批准服务、付费操作/对账、业务 SQL 入库、系统声音/麦克风/摄像头、固定30fps、完整视觉隐私识别、黑帧/冻结自动判定及平台发布。自建窗口CLI已验证一次；第三方picker与在途早停仍只有静态/离线覆盖，未进行真实第三方或账号测试。
+当前未实现：异步 start 服务、无人值守/分布式网关、OS 隔离/epoch fencing、自动软件操作/登录、可信人类批准服务、付费操作/对账、业务 SQL 入库、系统声音/麦克风/摄像头、固定30fps、完整视觉隐私识别、黑帧/冻结自动判定及平台发布。已新增 `--mode explicit` 与 `--validate-only`，接口见[显式单窗记录](recording-explicit-window.md)。停止时序修复后93项测试及Gamma复测通过，实际24.496667秒位于25±0.75秒门槛内；旧隔离片保持不变，完整人工视觉审看仍pending，详见[最新复测](recording-stop-timing.md)。第三方系统picker读取仍阻塞，不把新路径当作picker已修复。
 
 ## 本轮实际验证（review 前）
 
