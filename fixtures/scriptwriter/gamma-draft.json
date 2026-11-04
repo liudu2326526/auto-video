@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "tool_id": "tool_c349fe616c0a50d06288",
+  "candidate_digest": "635cde4e9b35b18aecdbe9fd9401da039f1500c38fae26f5330d32f8532444d5",
+  "brief": {
+    "audience": "每周要向团队做汇报、但不想从空白页排版的职场人",
+    "pain_point": "信息已经写好，演示文稿却还没开始；不能为了好看丢掉数字和重点。",
+    "angle": "同一份虚构周报，验证Gamma能否做出6页可讲清楚的汇报，不以速度或审美预设结论。",
+    "hook": "周报写完了，汇报还停在空白页？这次我们拿同一份材料，测一遍Gamma。",
+    "payoff": "观众学会用固定输入检查页数、数字、结构和可修改性，再决定是否适合自己的汇报。",
+    "duration_seconds": 60,
+    "input_classification": "synthetic_nonpersonal",
+    "demo_input": "以下均为虚构演示数据，不对应真实公司、客户或个人。请用中文制作6页团队周报：1标题与结论；2本周进展；3数据；4问题；5下周计划；6需决策事项。项目：纸飞机演示项目。进展：完成原型、访谈8人、修复12个问题。数据：注册120、激活72；请准确保留原数，不编造增长率或收入。问题：移动端导航难找。下周：测试两种导航、再访谈5人。决策：选择顶部或底部导航。不添加未经提供的成绩。",
+    "success_criteria": "生成结果可打开；检查6页结构、中文可读性、数字120/72/8/12准确、没有虚构增长率；尝试修改一处标题并确认结果保持；逐项记录通过或失败。页数或数字不符则如实展示，不能宣布成功。"
+  },
+  "assets": [
+    {
+      "id": "input",
+      "description": "虚构周报输入卡，明确标注演示数据",
+      "origin": "项目原创文字",
+      "status": "to_create",
+      "rights_review": "原创输入；实际制作时核对字体许可",
+      "privacy_review": "只用虚构数据，不显示真实账户"
+    },
+    {
+      "id": "screen",
+      "description": "Gamma完整操作原片，保留输入、等待、输出与修改",
+      "origin": "本次授权后实际录屏",
+      "status": "to_capture",
+      "rights_review": "先确认网站条款与录制用途；未核查不录制",
+      "privacy_review": "隐藏邮箱、头像、历史文档及通知"
+    },
+    {
+      "id": "checklist",
+      "description": "页数、数字、结构、修改能力四项检查卡；结果待实测填写",
+      "origin": "项目原创文字与实测记录",
+      "status": "to_create",
+      "rights_review": "不使用未授权音乐或第三方宣传片",
+      "privacy_review": "不得贴入真实业务数据"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "scene_01",
+      "start": 0,
+      "end": 4,
+      "claim_kind": "question",
+      "narration": "周报写完了，汇报还停在空白页？这次拿同一份材料，测一遍Gamma。",
+      "subtitle": "周报有了，汇报还没开始？",
+      "visual": "原创周报卡与空白演示画布对切；不展示伪造的生成结果。",
+      "purpose": "明确痛点，提出可验证的问题",
+      "asset_ids": [
+        "input"
+      ],
+      "source_ids": [],
+      "test_ids": []
+    },
+    {
+      "id": "scene_02",
+      "start": 4,
+      "end": 10,
+      "claim_kind": "source_claim",
+      "narration": "官网介绍它能制作演示文稿。先别急着信，接下来只看这份周报的实际结果。",
+      "subtitle": "官网说能做演示文稿，效果待测",
+      "visual": "展示官方入口后切回固定输入；角标“官网声明，非实测结果”。",
+      "purpose": "区分厂商宣传和本次验证",
+      "asset_ids": [
+        "input",
+        "screen"
+      ],
+      "source_ids": [
+        "source_002"
+      ],
+      "test_ids": [],
+      "attribution": "来源声明，非本项目实测"
+    },
+    {
+      "id": "scene_03",
+      "start": 10,
+      "end": 22,
+      "claim_kind": "instruction",
+      "narration": "输入这份虚构周报，要求中文六页。把注册一百二十、激活七十二写清楚，再加一句：不要编造数据。",
+      "subtitle": "固定输入：中文6页；数字120/72；不编造",
+      "visual": "光标逐段框出材料、页数与禁止编造指令；界面路径以实测为准。",
+      "purpose": "让观众能照着准备输入",
+      "asset_ids": [
+        "input",
+        "screen"
+      ],
+      "source_ids": [],
+      "test_ids": []
+    },
+    {
+      "id": "scene_04",
+      "start": 22,
+      "end": 34,
+      "claim_kind": "instruction",
+      "narration": "生成后，别只看排版。逐页核对结构和数字，再找有没有凭空多出的成绩。",
+      "subtitle": "检查：页数 → 数字 → 有没有编造",
+      "visual": "录下实际生成等待与结果；按真实顺序逐页检查。未出结果则保留失败状态。",
+      "purpose": "把验证动作变成视觉证据",
+      "asset_ids": [
+        "screen",
+        "checklist"
+      ],
+      "source_ids": [],
+      "test_ids": []
+    },
+    {
+      "id": "scene_05",
+      "start": 34,
+      "end": 48,
+      "claim_kind": "instruction",
+      "narration": "再改一处标题，看看能不能保留下来。好看的页面和准确的汇报，是两回事。",
+      "subtitle": "再测一步：修改标题并检查",
+      "visual": "实际操作修改标题，离开编辑焦点后复查；不要拼接伪造可修改状态。",
+      "purpose": "展示比单纯生成更有价值的检查",
+      "asset_ids": [
+        "screen",
+        "checklist"
+      ],
+      "source_ids": [],
+      "test_ids": []
+    },
+    {
+      "id": "scene_06",
+      "start": 48,
+      "end": 60,
+      "claim_kind": "opinion",
+      "narration": "我更关心它能不能省掉重复排版，又不丢掉事实。按这四项检查完，再决定要不要用它做你的下一次汇报。",
+      "subtitle": "看真实结果，再决定是否适合你",
+      "visual": "显示四项待测检查卡；实测后才填通过/失败，再由人工改写结尾结论。",
+      "purpose": "提供选择标准，不作无依据推荐",
+      "asset_ids": [
+        "checklist"
+      ],
+      "source_ids": [],
+      "test_ids": []
+    }
+  ],
+  "recording_steps": [
+    {
+      "id": "step_01",
+      "action": "准备与权限检查；确认Gamma入口、账号可用、额度、条款/录屏用途、桌面独占。只使用上面的虚构输入。",
+      "expected_evidence": "保存日期、环境、界面截图与门槛核对。",
+      "stop_condition": "需要登录/验证码/新增付款/条款或权限时按现有授权边界暂停确认，不在脚本中推定已获授权。",
+      "recovery": "退出阻断流程，保留状态；不要重复付款或建号。",
+      "scene_ids": [
+        "scene_01",
+        "scene_02"
+      ]
+    },
+    {
+      "id": "step_02",
+      "action": "开始原片录制，展示固定输入卡；观察当前界面后选择创建演示文稿入口，粘贴固定输入并检查无误。",
+      "expected_evidence": "原片包含输入全文、页数要求、账户条件与开始时间（隐私内容遮挡）。",
+      "stop_condition": "入口或按钮与预期不符、账户信息无法安全隐藏时停止。",
+      "recovery": "先重新观察界面，记录实际路径；不要盲点坐标。",
+      "scene_ids": [
+        "scene_03"
+      ]
+    },
+    {
+      "id": "step_03",
+      "action": "在已授权且额度允许的条件下提交一次生成；保留完整等待，记录起止时间和生成任务标识。",
+      "expected_evidence": "实际耗时和原始等待片段；完整可打开结果或失败证据。",
+      "stop_condition": "额度不够、付费提示、网络错误或生成结果不确定时暂停；不重复提交。",
+      "recovery": "先查任务/文档是否已生成；确认未执行且允许重试时才重试。",
+      "scene_ids": [
+        "scene_04"
+      ]
+    },
+    {
+      "id": "step_04",
+      "action": "逐页检查6页结构与固定数字；修改一处标题，离开焦点再检查保存结果。",
+      "expected_evidence": "逐项通过/失败记录、修改前后原片和可打开的结果引用。",
+      "stop_condition": "结果丢失、数字不符、编辑失败时记录失败，不美化结果。",
+      "recovery": "保留失败素材；如要补测建立新attempt，不能覆盖旧证据。",
+      "scene_ids": [
+        "scene_05"
+      ]
+    },
+    {
+      "id": "step_05",
+      "action": "停止录制，检查文件存在、完整解码与关键步骤覆盖。根据实际结果更新检查卡和旁白，再交人工完整看听。",
+      "expected_evidence": "原片路径/哈希、实际可用时间点、测试记录、最终脚本待审版本。",
+      "stop_condition": "没有完整原片或音画证据、来源过期、许可未清时不能冻结最终脚本。",
+      "recovery": "仅补录缺少镜头，保留原片；真实等待可压缩但标注实耗时。",
+      "scene_ids": [
+        "scene_06"
+      ]
+    }
+  ]
+}
