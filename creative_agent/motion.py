@@ -41,12 +41,14 @@ def validate_motion(path):
     if p['schema'] != 'original_editorial_motion/v1':
         raise EditError('Unsupported motion schema')
     identity(p['id']); src = bound_file(p['source'], pp.parent)
-    if p['kind'] not in {'paper_stack', 'review_advice'}:
+    if p['kind'] not in {'paper_stack', 'review_advice', 'office_pause'}:
         raise EditError('Only original geometric illustration types supported')
     if (not isinstance(p['items'], list) or len(p['items']) != 3
             or any(not isinstance(x, str) or not x.strip() or len(x) > 10
                    or any(ord(c) < 32 for c in x) for x in p['items'])):
         raise EditError('Exactly three short editorial labels required')
+    if p['kind'] == 'office_pause' and (len(p['items'][0]) > 4 or any(len(x) > 8 for x in p['items'][1:])):
+        raise EditError('Office paper label at most four characters; action labels at most eight')
     m = probe(src); vs = [s for s in m['streams'] if s['codec_type'] == 'video']
     if len(vs) != 1 or any(s['codec_type'] == 'audio' for s in m['streams']):
         raise EditError('Source must have one silent video track')
@@ -64,6 +66,8 @@ def validate_motion(path):
     area = rectangle(p['annotation_area'], w, h)
     if not 300 <= area[2] <= 1024 or not 160 <= area[3] <= 512:
         raise EditError('Annotation rectangle must be 300..1024 by 160..512 pixels')
+    if p['kind'] == 'office_pause' and (area[2] < 600 or area[3] < 300):
+        raise EditError('Office action requires at least 600 by 300 pixels')
     if not isinstance(p['evidence_areas'], list) or not 1 <= len(p['evidence_areas']) <= 12:
         raise EditError('Explicit bounded evidence areas required')
     for e in p['evidence_areas']:
@@ -85,9 +89,51 @@ def illustration(kind, items, width, height, index, frames):
     def font(size): return ImageFont.truetype(str(FONT), max(12, round(size * scale)))
     def text(x, y, label, size=38, fill='#E9EDF5'):
         d.text((round(x * width / 960), round(y * height / 300)), label, font=font(size), fill=fill)
-    text(24, 12, '情境示意 · 编辑提示', 30, '#9EABC1')
+    text(24, 12, '情境动画 · 非产品界面' if kind == 'office_pause' else '情境示意 · 编辑提示', 30, '#9EABC1')
     phase = index / max(1, frames - 1)
-    if kind == 'paper_stack':
+    if kind == 'office_pause':
+        # Original abstract office character: a paper moves out, is stopped,
+        # then returns for checking. No stock, real likeness, product controls,
+        # factual document contents, or simulated product execution.
+        sx, sy = width / 960, height / 512
+        def point(x, y): return round(x * sx), round(y * sy)
+        def box(x, y, xx, yy): return (*point(x, y), *point(xx, yy))
+        def line(coords, fill, thickness):
+            d.line([point(x, y) for x, y in coords], fill=fill,
+                   width=max(1, round(thickness * min(sx, sy))), joint='curve')
+        def label(x, y, value, size, color):
+            d.text(point(x, y), value,
+                   font=ImageFont.truetype(str(FONT), max(12, round(size * min(sx, sy)))), fill=color)
+        stop = .35 <= phase < .65
+        movement = phase / .35 if phase < .35 else (1 if stop else max(0, (1-phase) / .35))
+        doc_x = 535 + 210 * movement
+        # Desk and blank generic monitor.
+        d.rounded_rectangle(box(35, 418, 925, 448), radius=max(2, round(10*sx)), fill='#61758B')
+        line([(90, 448), (90, 500)], '#61758B', 14)
+        line([(865, 448), (865, 500)], '#61758B', 14)
+        d.rounded_rectangle(box(65, 190, 280, 350), radius=max(2, round(14*sx)), fill='#39536A')
+        d.rounded_rectangle(box(80, 205, 265, 333), radius=max(2, round(6*sx)), fill='#75DBCE')
+        line([(172, 350), (172, 400), (120, 400), (225, 400)], '#61758B', 12)
+        # Explicitly synthetic, geometric person; no particular person's face.
+        d.ellipse(box(345, 100, 465, 220), fill='#FFCE92')
+        d.polygon([point(x,y) for x,y in [(355,230),(445,230),(490,418),(310,418)]], fill='#648DED')
+        eye_y = 154 if stop else 161
+        for x in (383, 425): d.ellipse(box(x-5, eye_y-5, x+5, eye_y+5), fill='#172640')
+        line([(390, 193), (422, 193 if not stop else 183)], '#684936', 4)
+        # The moving paper is generic, not the source/Gamma report.
+        d.rounded_rectangle(box(doc_x, 238, doc_x+135, 397), radius=max(2, round(9*sx)), fill='#F5EBCF')
+        label(doc_x+12, 249, items[0], 24, '#28384B')
+        for yy in (305, 331, 357): line([(doc_x+17, yy), (doc_x+112, yy)], '#8191A2', 4)
+        hand_x = doc_x - 12
+        line([(440, 270), (505, 323), (hand_x, 289)], '#FFCE92', 24)
+        d.ellipse(box(hand_x-20, 265, hand_x+20, 310), fill='#FFCE92')
+        for k in range(4): line([(hand_x-12+k*8, 279), (hand_x-14+k*8, 250)], '#FFCE92', 7)
+        label(555, 80, items[1] if phase < .65 else items[2], 45, '#FFB2AC' if phase < .65 else '#D9FF60')
+        if stop:
+            for x in (842, 875): d.rounded_rectangle(box(x,145,x+15,207),radius=max(1,round(3*sx)),fill='#FFB2AC')
+        elif phase >= .65:
+            line([(840, 182), (750, 182), (775, 165), (750, 182), (775, 199)], '#75DBCE', 7)
+    elif kind == 'paper_stack':
         # Three original paper cards gently enter; filenames are editorial jokes.
         for i, label in enumerate(items):
             ease = min(1, max(0, phase * 3 - i * .45))

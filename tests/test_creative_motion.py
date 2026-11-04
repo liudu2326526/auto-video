@@ -74,6 +74,20 @@ class MotionValidationTests(unittest.TestCase):
         with self.assertRaises(motion.EditError): motion.private_new_directory(self.root / 'missing' / '..' / 'new')
         p = motion.private_new_directory(self.root / 'new'); self.assertEqual(p.stat().st_mode & 0o777, 0o700)
 
+    def test_office_scene_requires_legible_bounded_space_and_disjoint_source(self):
+        self.plan['kind'] = 'office_pause'
+        with self.assertRaises(motion.EditError): self.validate()
+        self.media['streams'][0].update(width=1080, height=1920)
+        self.plan['annotation_area'] = {'x':60,'y':650,'width':960,'height':512}
+        self.plan['evidence_areas'] = [{'x':60,'y':400,'width':960,'height':200}]
+        self.assertEqual(self.validate()[2], (1080,1920,30))
+        original = self.plan['items']
+        self.plan['items'] = ['verylong', 'short', 'short']
+        with self.assertRaises(motion.EditError): self.validate()
+        self.plan['items'] = original
+        self.plan['evidence_areas'][0]['height'] = 300
+        with self.assertRaises(motion.EditError): self.validate()
+
 
 @unittest.skipUnless(importlib.util.find_spec('PIL') and motion.FONT.is_file() and shutil.which('ffmpeg'),
                      'Actual local renderer requires Pillow, reviewed macOS font and FFmpeg')
@@ -123,6 +137,28 @@ class RealMotionTests(unittest.TestCase):
         self.assertTrue(processes); self.assertTrue(all(p.poll() is not None for p in processes))
         result = json.loads((self.root / 'cancelled/result.json').read_text())
         self.assertFalse(result['final_approved']); self.assertFalse((self.root / 'cancelled/original-motion.mp4').exists())
+
+    def test_original_office_action_moves_out_stops_and_returns_without_stock(self):
+        images = [motion.illustration('office_pause', ['周报','先别发','先核对'],960,512,i,60)
+                  for i in (0,29,59)]
+        # Paper is in the right-hand stop region in the middle phase, then back.
+        self.assertEqual(images[1].getpixel((850,350)), (245,235,207,255))
+        for im in (images[0],images[2]):
+            self.assertNotEqual(im.getpixel((850,350)), (245,235,207,255))
+        self.assertEqual(images[0].getpixel((640,380)), images[2].getpixel((640,380)))
+        self.assertEqual(images[0].size,(960,512))
+        self.assertNotEqual(images[0].tobytes(),images[1].tobytes())
+        plan = json.loads(self.plan.read_text())
+        plan.update(kind='office_pause', items=['周报','先别发','先核对'],
+                    annotation_area={'x':10,'y':170,'width':620,'height':300},
+                    evidence_areas=[{'x':0,'y':0,'width':640,'height':160}])
+        self.plan.write_text(json.dumps(plan,ensure_ascii=False))
+        result = motion.render_motion(self.plan,self.root/'office-action')
+        self.assertEqual(result['frames'],30)
+        self.assertEqual(result['audio_tracks'],0)
+        self.assertEqual(result['full_decode_exit'],0)
+        self.assertFalse(result['external_overlay_assets_used'])
+        self.assertFalse(result['automatic_semantic_or_rights_approval'])
 
     def test_watchdog_kills_encoder_during_a_stalled_frame_producer(self):
         real_draw = motion.illustration; calls = 0
