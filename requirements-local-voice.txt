@@ -1,0 +1,8 @@
+# Optional isolated runtime: actual Mac CPU validation used these top-level versions.
+# This is not a complete transitive/hash lock and does not install automatically.
+kokoro==0.9.4
+misaki[zh]==0.9.4
+torch==2.15.0
+transformers==5.22.1
+soundfile==0.14.0
+numpy==2.5.4

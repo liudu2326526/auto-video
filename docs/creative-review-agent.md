@@ -129,3 +129,7 @@ python3 -m creative_agent motion var/creative/original-motion.json \
 [Apple 许可 §2F](https://www.apple.com/legal/sla/docs/macOSSequoia.pdf)
 限制公开分享及商业等使用，不能把系统 TTS 标为自行拥有的商业配音。
 已有试片保留历史原样并另记发现；公开交付前须更换有适用许可的配音、重新导出和实际听审。
+
+现可用独立 [本地中文预设配音准备](local-preset-voice.md)替换受限系统声音。
+`voice` 使用显式核查的固定模型/音色和冻结时段，不自动下载、克隆声音或通过听审；
+准备成功后仍需剪映实际替换、新导出及完整视听复核。

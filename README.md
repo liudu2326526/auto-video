@@ -15,7 +15,7 @@
 | 单窗口录屏 | `python3.12 -m recording_agent --help` | [MVP](docs/recording-mvp.md)、[Gamma 原片与裁剪](docs/gamma-local-window-crop.md)；默认无声，不回退全屏 |
 | 实测执行 | `python3.12 -m execution_agent --help` | [状态与证据契约](docs/test-execution-agent.md)、[TextEdit 真实 GUI 验证](docs/test-execution-agent-gui-validation.md)；GUI 由 Skill 监督执行 |
 | 剪映剪辑 | `python3.12 -m editing_agent --help` | [输入协议](docs/editing-agent-mvp.md)、[剪映原生验证](docs/editing-agent-jianying-validation.md)、[画面字幕对齐修复](docs/gamma-alignment-correction.md)；CLI 准备/检查，CUA 操作剪映 |
-| 创意逐镜返修 | `python3.12 -m creative_agent --help` | [参考对照、装饰用途与硬门槛](docs/creative-review-agent.md)；绑定实际成片，缺连续观看或听审保持待验，不自动评分 |
+| 创意逐镜返修 | `python3.12 -m creative_agent --help` | [参考对照、装饰用途与硬门槛](docs/creative-review-agent.md)、[本地中文预设配音](docs/local-preset-voice.md)；绑定实际成片，缺连续观看或听审保持待验，不自动评分 |
 
 实测 Skill 为 `.agents/skills/execute-tool-test/`，剪辑 Skill 为 `.agents/skills/edit-video/`。当前模块采用各自显式版本契约，尚无自动跨 Agent 调度、统一 SQL 或发布网关；操作员必须核对真实结果、素材来源和脚本映射。已有 VFR 录屏不能直接当作剪辑模块要求的 30fps CFR 输入。下文测试数量和实验结果保留历史时点，不表示所有最新功能或当前执行环境均已通过。
 
