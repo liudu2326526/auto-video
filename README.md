@@ -478,3 +478,13 @@ ready → submitting → accepted → reviewing → published
 [tool-discovery](agents/tool-discovery.md)。运行输出放在忽略的 `var/`，未知门槛不进入合格短名单。
 
 首次真实验证已完成：AIHOT RSS 23 条文章线索，经父 Agent 官网核验标注得到 **Gamma** 一个研究候选；7 项门槛仍未知，合格短名单为0，未做账号内实测或录屏。详见[真实运行记录](docs/discovery-live-validation.md)。默认 direct；受管云环境可显式使用 `config/discovery.managed-proxy.example.json`，其DNS/出站信任边界与direct不同，无自动切换。仓库 Agent Skill：`.agents/skills/discover-tools/SKILL.md`。
+
+## 可运行的编剧 Agent MVP
+
+新增助手编剧Skill与本地校验/导出器：`python -m scriptwriter_agent --help`。
+从发现候选和受信创作稿输出旁白、分镜、素材清单、录屏执行计划和人工审核包。
+参见[实施与Claude方案review](docs/scriptwriter-mvp.md)、[编剧岗位](agents/scriptwriter.md)
+及 `.agents/skills/write-tool-script/SKILL.md`。
+
+Gamma提供可执行的60秒待实测拍摄草案，固定虚构周报输入，不虚构功能成功、价格或耗时。
+所有输出仍需人工审核，不自动录屏/发布；独立本地实测证据可回填，但网页观察不能被提升为实测。
