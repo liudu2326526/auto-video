@@ -16,6 +16,8 @@ def main():
     voice.add_argument('plan'); voice.add_argument('--output', required=True)
     retime = sub.add_parser('retime', help='Prepare explicit silent jump cuts/holds with a mandatory visible notice; never approves timing claims')
     retime.add_argument('plan'); retime.add_argument('--output', required=True)
+    simulation = sub.add_parser('simulate', help='Render explicit viewport/occlusion assumptions; never approves actual phone readability')
+    simulation.add_argument('plan'); simulation.add_argument('--output', required=True)
     args = ap.parse_args()
     try:
         if args.command == 'validate':
@@ -31,6 +33,9 @@ def main():
         elif args.command == 'retime':
             from .retime import prepare_retime
             result = prepare_retime(args.plan, args.output)
+        elif args.command == 'simulate':
+            from .occlusion import simulate
+            result = simulate(args.plan, args.output)
         else:
             result = audit(args.plan, args.exported, args.review); save_new(args.output, result)
         print(json.dumps(result, ensure_ascii=False, indent=2))

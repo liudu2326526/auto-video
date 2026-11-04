@@ -170,3 +170,48 @@ result.json 保留每段输入及输出区间、停帧数量和说明；失败�
 
 新增 6 项测试含模拟边界/错误映射，以及真实双色静音片的选段、停帧、完整解码、
 源证据颜色保留、拒覆盖/符号链接和真实编码超时。它们不是产品操作或审美验收。
+
+## 显式平台遮挡模拟
+
+`python3 -m creative_agent simulate var/creative/masks.json --output var/creative/new-mask-attempt`
+准备本地静帧和区域相交结果，不操纵手机、浏览器或剪映。结果不批准实际可读性、隐私或发布。
+输入 `platform_occlusion_simulation/v1`，必填：
+
+```json
+{
+  "schema": "platform_occlusion_simulation/v1",
+  "id": "declared-example",
+  "source": {"path": "export.mp4", "sha256": "<实际文件的64位SHA-256>"},
+  "profiles": [{
+    "id": "assumption-360",
+    "viewport": {"width": 360, "height": 640},
+    "basis": "操作者声明的示例遮挡，非平台官方规格或实机结论",
+    "blocked_areas": [{"x": 0, "y": 500, "width": 360, "height": 140}]
+  }],
+  "regions": [{
+    "id": "caption",
+    "in_frame": 0,
+    "out_frame": 30,
+    "rectangle": {"x": 100, "y": 1370, "width": 880, "height": 110},
+    "observation": "操作者声明的字幕区域；示例不等于自动识字"
+  }],
+  "anchor_frames": [0, 15, 29]
+}
+```
+
+严格字段、唯一标识、源哈希、单视频轨、尺寸 240..3840、r/avg 两个帧率字段均为 30/1、
+帧数 1..18000。此命令不逐帧校验 PTS；最终剪辑验收另查时间戳和完整解码。
+1..3 个视口宽 240..1440、高 240..2560，各 1..8 个遮挡矩形；
+1..100 个重要区域和各自有效帧区间，1..40 个排序去重整数锚帧。
+矩形均含整数 x/y/width/height，拒布尔值、越界、未知字段和变化源。
+区域按居中 contain 映射到视口，保留浮点边缘；边缘恰好相接不计相交。
+这不模拟 cover、手势、设备像素密度或真正的平台布局。
+
+每张图明确标 `SIMULATION / NOT PHONE APPROVAL`；遮挡块为原创红色示意，
+不是复制平台界面。每次单帧本地 FFmpeg 解码有 60 秒超时，并校验 RGB 字节数，
+不缓存整段原始视频。依赖现有 Pillow/FFmpeg，不安装或联网。输出新私有目录 0700，
+拒覆盖、符号链接祖先与路径穿越；源哈希结束时复查。失败目录保留，不写成功 result。
+结果同时声明 operator_declarations_only、actual_phone_test=false、
+automatic_readability_or_privacy_approval=false。未声明内容、不同真实布局和人的感知仍不受此检查保证。
+
+真实案例、许可复核、全帧扫描与数值检查边界见[平台与媒体检查记录](creative-platform-validation.md)。
