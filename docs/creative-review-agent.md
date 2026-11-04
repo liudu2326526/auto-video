@@ -123,7 +123,7 @@ python3 -m creative_agent motion var/creative/original-motion.json \
 有损重编码仍可能改变区域外的像素值，不能声称原证据逐像素无损。
 `result.json` 明确 `source_rights_unchanged=true` 和
 `automatic_semantic_or_rights_approval=false`。原创叠加不授予底片、字体、配音的权利，
-不能绕过素材库的人工审核。另记 accent、实际导入剪映、原生导出及逐镜复核收据。
+外部素材须按[素材协议](material-agent-mvp.md)保存真实用途复核或已委托的受限助手选择，不能冒充 human。另记 accent、实际导入剪映、原生导出及逐镜复核收据。
 
 声音可在本机生成不表示可公开使用。当前 macOS Sequoia 系统声音的
 [Apple 许可 §2F](https://www.apple.com/legal/sla/docs/macOSSequoia.pdf)
@@ -133,3 +133,36 @@ python3 -m creative_agent motion var/creative/original-motion.json \
 现可用独立 [本地中文预设配音准备](local-preset-voice.md)替换受限系统声音。
 `voice` 使用显式核查的固定模型/音色和冻结时段，不自动下载、克隆声音或通过听审；
 准备成功后仍需剪映实际替换、新导出及完整视听复核。
+
+## 明确跳剪与停帧
+
+当真实操作等待太长时，`retime` 可准备有明确源帧映射的静音选段，不能生成新产品动作或用时证明。
+它由 Codex 在既有回退授权下设计、审核和实施；本轮没有重试此前被拒的 Claude 外传调用。
+
+```sh
+python3 -m creative_agent retime var/creative/retime-plan.json \
+  --output var/creative/new-retime-attempt
+```
+
+输入 `editorial_retime/v1`，必填 `schema/id/source{path,sha256}/segments/notice_area/evidence_areas`。
+每个 segment 只含 `source_in_frame/source_out_frame/output_frames`，源区间左闭右开：
+正常播放须 output_frames 等于区间长度；延长只允许单个真实源帧的 hold。
+最多 12 段，只能按源顺序向前，禁止倒放、重叠回跳、隐含变速、布尔帧号、越界或超过 300 输出帧。
+不标注“原速”或实际产品耗时，因为源片本身可能已经被剪辑/加速。
+源须为单轨静音视频、240..3840 偶数尺寸、最多 300 帧，并逐帧验证零起点连续 CFR30。
+
+必须保留可见的固定“已跳剪”“含停帧”说明，内容由实际映射类型决定，不能自定义隐藏。
+notice_area 为源像素 `x/y/width/height`，宽 300..1024、高 40..100，须与明确声明的
+1..12 个证据矩形不相交。文字缩到区域能容纳的大小，否则拒绝；这不自动保证手机可读。
+调用者应在手机尺寸实际看过说明，必要时增大区域并用新 attempt 准备。
+矩形和原始画面的意义仍是操作员声明，代码不能理解某段是否属于等待或画面是否支持台词。
+
+新目录 0700，拒覆盖、用户符号链接祖先和 `..`。编码命令有 90 秒超时，Python subprocess
+超时会杀掉并回收本次子进程；probe/解码分别有界，不承诺整个函数的硬实时上限。
+输出静音、尺寸、精确帧数、连续 PTS、完整解码和源哈希复查后才独占封存 `retimed.mp4`。
+result.json 保留每段输入及输出区间、停帧数量和说明；失败保留 partial，不写最终批准。
+准备成功不是剪映落轨或审查通过。新计划必须说明跳剪/停帧，不改变旁白就不能据此自动缩短字幕，
+仍需新原生工程、导出和实际逐镜/听审。
+
+新增 6 项测试含模拟边界/错误映射，以及真实双色静音片的选段、停帧、完整解码、
+源证据颜色保留、拒覆盖/符号链接和真实编码超时。它们不是产品操作或审美验收。
