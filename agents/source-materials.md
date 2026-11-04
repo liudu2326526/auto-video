@@ -1,5 +1,9 @@
 # 网上素材与本地素材库 Agent
 
+官方API和小型音效/动效目录扩展见 `docs/material-providers.md`。
+Pexels/Pixabay检索限具体项目/镜头、公开词、单页少量结果，遵守24小时缓存和配额；不创建或长期保存key。
+来源可用不等于已商用批准。Mixkit人工获取，不能用登录绕过自动化禁令；Noto动画适用CC BY 4.0并验证全部帧。
+
 由父助手调用的岗位流程，配合 `.agents/skills/source-materials/SKILL.md` 和标准库
 `material_agent`；不是常驻服务。可显式下载支持来源的单个公开素材，不依赖下载供应商 API。
 

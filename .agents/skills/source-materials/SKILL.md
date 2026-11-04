@@ -5,6 +5,11 @@ description: 根据视频分镜检索公开图片/视频/音频候选，逐项�
 
 # 素材搜集和复用
 
+Pexels/Pixabay按镜头官方API及Noto/Mixkit目录见 `docs/material-providers.md`。
+API key只从用户已安全提供的进程环境读取，不在参数/日志/缓存/Git保存；创建key、OAuth或长期配置先确认。
+缺key只能报告待验证，不能把mock当真实接通。Mixkit自动化获取被条款禁止，Google登录许可不能覆盖它。
+Noto动画须按CC BY 4.0保存署名、全帧验证、实际改动说明；不得冒充静帧或已兼容视频。
+
 在仓库根目录阅读 `agents/source-materials.md`、`docs/material-agent-mvp.md`，运行
 `python3.12 -m material_agent --help`。助手负责真实公开检索、看素材和复核，helper 只处理本地结构与文件。
 
@@ -16,6 +21,8 @@ description: 根据视频分镜检索公开图片/视频/音频候选，逐项�
 3. 只用 public_queries 通过当前可用的联网工具检索；不假定平台 API 可用。打开单个素材页和
    原始许可页面，保存 asset_license 和 license_terms 两种证据摘要及检索时间。
    无法访问时如实记 blocker；不绕过登录/付费墙/条款或通过其他入口规避拒绝。
+   Pexels/Pixabay使用provider-search及受信的public_nonpersonal镜头请求，只取第一页最多5项，缓存24小时。
+   选择库内candidate和variant后显式provider-download，不批量镜像，不把API key传给CDN或DoH。
 4. 用 `add --record <metadata>` 保存候选。用户已授权下载且是支持的许可明确公开来源时，读取
    `docs/material-download.md`，用 `download --record <new-record> --policy <trusted-policy> --context <use>`
    下载单文件、校验并入库。默认系统DNS，其他模式显式选择，失败不自动切换；不换域、关闭公共IP检查、

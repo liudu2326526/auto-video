@@ -1,4 +1,4 @@
-"""Material library and handoffs; only the explicit download command accesses public HTTPS."""
+"""Material library; only explicit search/download source commands use public HTTPS."""
 import argparse
 import json
 import sqlite3
@@ -41,6 +41,27 @@ def main(argv=None):
     show.add_argument('--id', required=True)
     downloads = sub.add_parser('downloads', help='Download/reuse/failure audit, including records not imported after failure')
     downloads.add_argument('--id', required=True)
+    sub.add_parser('provider-status', help='Show credential-presence booleans and provider quota state; never print keys')
+    search_api = sub.add_parser('provider-search', help='One shot-scoped official API page, cached 24h; existing env key required on miss')
+    search_api.add_argument('--request', required=True)
+    search_api.add_argument('--output', required=True)
+    search_api.add_argument('--resolver', choices=['system', 'cloudflare_doh'], default='system')
+    provider_download = sub.add_parser('provider-download', help='Download one registered candidate rendition, without API credentials on CDN')
+    provider_download.add_argument('--candidate-id', required=True)
+    provider_download.add_argument('--variant', required=True)
+    provider_download.add_argument('--context', required=True)
+    provider_download.add_argument('--resolver', choices=['system', 'cloudflare_doh'], default='system')
+    source_catalog = sub.add_parser('source-catalog', help='Read the small reviewed Noto/Mixkit catalog; Mixkit is manual-only')
+    source_catalog.add_argument('--source', choices=['noto', 'mixkit'], required=True)
+    catalog_download = sub.add_parser('catalog-download', help='Download one reviewed Noto animation; Mixkit automation is prohibited')
+    catalog_download.add_argument('--id', required=True)
+    catalog_download.add_argument('--context', required=True)
+    catalog_download.add_argument('--resolver', choices=['system', 'cloudflare_doh'], default='system')
+    withdraw = sub.add_parser('provider-withdraw', help='Block a provider asset and existing imports; report required manual copy removal')
+    withdraw.add_argument('--provider', choices=['pexels', 'pixabay', 'noto'], required=True)
+    withdraw.add_argument('--asset-id', required=True)
+    withdraw.add_argument('--operator', required=True)
+    withdraw.add_argument('--reason', required=True)
     args = parser.parse_args(argv)
     library = None
     try:
@@ -65,6 +86,29 @@ def main(argv=None):
             result = library.verify_handoff(args.handoff)
         elif args.command == 'downloads':
             result = library.download_history(args.id)
+        elif args.command == 'provider-status':
+            from .providers import provider_status
+            result = provider_status(library)
+        elif args.command == 'provider-search':
+            from .providers import search_provider, write_search
+            result = search_provider(library, read_json(args.request), resolver=args.resolver)
+            write_search(result, args.output)
+        elif args.command == 'provider-download':
+            from .provider_ingest import download_provider
+            result = download_provider(library, args.candidate_id, args.variant, read_json(args.context), resolver=args.resolver)
+        elif args.command == 'source-catalog':
+            from .provider_ingest import catalog
+            result = catalog(args.source)
+        elif args.command == 'catalog-download':
+            from .provider_ingest import download_catalog
+            result = download_catalog(library, args.id, read_json(args.context), resolver=args.resolver)
+        elif args.command == 'provider-withdraw':
+            from .providers import ProviderStore
+            store = ProviderStore(library)
+            try:
+                result = store.withdraw(args.provider, args.asset_id, args.operator, args.reason)
+            finally:
+                store.close()
         else:
             result = library.history(args.id)
         print(json.dumps(result, ensure_ascii=False, indent=2))

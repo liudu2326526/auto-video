@@ -1,5 +1,7 @@
 # 素材 Agent 与本地素材库 MVP
 
+新增 [Pexels/Pixabay官方API、Mixkit人工目录与Noto动画](material-providers.md)；原有素材库协议和人工用途审核继续生效。
+
 这是可被父助手反复调用的素材岗位与本地 Python helper。助手用当前可用的公开网页工具实际检索、
 看素材和核查授权；现可按[公开单文件下载协议](material-download.md)显式执行 download；
 其他命令离线，不调用模型或搜索 API。

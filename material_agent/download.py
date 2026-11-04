@@ -65,13 +65,18 @@ class Transfer(Fetcher):
     Bodies stream to a private file (or <=64KiB robots buffer), <=1MB/s. All DNS
     results must be public and the selected IP is pinned while TLS verifies host.
     """
+    APPROVED_HOSTS = (HOST,)
+    DNS_SUFFIXES = {HOST: ('wikimedia.org',)}
+    REQUEST_BUDGET = 5
+
     def __init__(self, policy):
-        super().__init__({'transport': 'direct', 'allowed_domains': [HOST], 'max_requests': 5,
+        super().__init__({'transport': 'direct', 'allowed_domains': self.APPROVED_HOSTS, 'max_requests': self.REQUEST_BUDGET,
                           'max_bytes': policy['max_bytes'], 'max_total_bytes': policy['max_bytes'] * 3 + 131072,
                           'max_redirects': 0, 'timeout': 15, 'total_timeout': policy['total_timeout'], 'min_interval': 2})
         self.resolver = policy.get('resolver', 'system')
         need(self.resolver in {'system', 'cloudflare_doh'}, 'Unknown resolver; no automatic fallback')
         self._doh_address = None
+        self._doh_addresses = {}
 
     def _request_start(self, host):
         self._remaining()
@@ -93,11 +98,11 @@ class Transfer(Fetcher):
     def _resolve(self, host):
         if self.resolver == 'system':
             return super()._resolve(host)
-        need(host == HOST, 'DoH query domain is fixed to the approved public media host')
-        if self._doh_address is not None:
-            return self._doh_address
+        need(host in self.allowed_domains, 'DoH query domain must be an approved fixed host')
+        if host in self._doh_addresses:
+            return self._doh_addresses[host]
         self._request_start(DOH_HOST)
-        result = self._get(DOH_URL, DOH_HOST, '1.1.1.1', limit=65536,
+        result = self._get(self._doh_url(host), DOH_HOST, '1.1.1.1', limit=65536,
                            allowed_mime={'application/dns-json'}, accept='application/dns-json')
         need(result['status'] == 200, 'Public DNS service refused; no redirect or fallback')
         try:
@@ -114,15 +119,15 @@ class Transfer(Fetcher):
             need(isinstance(question, list) and len(question) == 1 and isinstance(question[0], dict)
                  and set(question[0]) == {'name', 'type'} and type(question[0]['type']) is int
                  and question[0]['type'] == 1 and isinstance(question[0]['name'], str)
-                 and question[0]['name'].removesuffix('.').lower() == HOST, 'Public DNS question mismatch')
+                 and question[0]['name'].removesuffix('.').lower() == host, 'Public DNS question mismatch')
             answers = data['Answer']
             need(isinstance(answers, list) and 1 <= len(answers) <= 16, 'Public DNS answer count invalid')
             aliases, addresses = {}, {}
             def name(value):
                 need(isinstance(value, str), 'Invalid public DNS name')
                 normalized = value.removesuffix('.').lower()
-                need(re.fullmatch(r'[a-z0-9-]+(?:\.[a-z0-9-]+)*\.wikimedia\.org', normalized)
-                     or normalized == HOST, 'Public DNS alias outside approved provider')
+                need(normalized == host or any(normalized == suffix or normalized.endswith('.' + suffix)
+                     for suffix in self.DNS_SUFFIXES.get(host, ())), 'Public DNS alias outside approved provider')
                 return normalized
             for item in answers:
                 owner = name(item['name'])
@@ -136,24 +141,37 @@ class Transfer(Fetcher):
                     aliases[owner] = name(item['data'])
                 else:
                     raise MaterialError('Unexpected public DNS answer type')
-            current, chain = HOST, set()
+            current, chain = host, set()
             for _ in range(5):
                 need(current not in chain, 'Public DNS alias loop')
                 chain.add(current)
                 if current in addresses:
                     need(current not in aliases and set(addresses) <= chain and set(aliases) <= chain,
                          'Unrelated/ambiguous public DNS answers')
-                    self._doh_address = addresses[current][0]
-                    return self._doh_address
+                    self._doh_addresses[host] = addresses[current][0]
+                    if host == HOST:
+                        self._doh_address = self._doh_addresses[host]
+                    return self._doh_addresses[host]
                 need(current in aliases, 'Public DNS has no address for the approved question')
                 current = aliases[current]
             raise MaterialError('Public DNS alias chain exceeds budget')
         except (ValueError, TypeError, KeyError) as exc:
             raise MaterialError('Invalid public DNS response; no fallback') from exc
 
+    def _doh_url(self, host):
+        need(host in self.allowed_domains, 'Unapproved DNS question')
+        return 'https://' + DOH_HOST + '/dns-query?name=' + host + '&type=A&cd=false'
+
+    def _request_headers(self, address, host, accept):
+        headers = {'User-Agent': USER_AGENT, 'Accept-Encoding': 'identity', 'Connection': 'close'}
+        if accept:
+            headers['Accept'] = accept
+        return headers
+
     def _get(self, address, host, pinned, *, limit, sink=None, allowed_mime=None, accept=None):
         # Only the ordinary allowlisted URL or the fixed public DoH service may enter here.
-        need(host in self.allowed_domains or address == DOH_URL and host == DOH_HOST and pinned == '1.1.1.1',
+        need(host in self.allowed_domains or host == DOH_HOST and pinned == '1.1.1.1'
+             and any(address == self._doh_url(h) for h in self.allowed_domains),
              'Unapproved transport destination')
         _public_ip(pinned)
         conn = _PinnedHTTPSConnection(host, pinned, min(self.timeout, self._remaining()), self._remaining)
@@ -171,9 +189,7 @@ class Transfer(Fetcher):
             timer.daemon = True
             timer.start()
             p = urlsplit(address)
-            request_headers = {'User-Agent': USER_AGENT, 'Accept-Encoding': 'identity', 'Connection': 'close'}
-            if accept:
-                request_headers['Accept'] = accept
+            request_headers = self._request_headers(address, host, accept)
             conn.request('GET', p.path + ('?' + p.query if p.query else ''), headers=request_headers)
             transport.settimeout(min(self.timeout, self._remaining()))
             response = conn.getresponse()
@@ -184,7 +200,10 @@ class Transfer(Fetcher):
             locations = headers.get_all('Location', [])
             need(len(locations) <= 1, 'Ambiguous redirect rejected')
             result = {'status': response.status, 'final_url': address, 'content_type': mime,
-                      'location': locations[0] if locations else None, 'bytes': 0, 'sha256': None}
+                      'location': locations[0] if locations else None, 'bytes': 0, 'sha256': None,
+                      'headers': {k.lower(): headers[k] for k in (
+                          'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset',
+                          'Retry-After', 'Last-Modified', 'ETag') if headers.get(k) is not None}}
             # Never read login, error, throttling or redirect bodies; never send credentials.
             if response.status != 200:
                 return result
@@ -284,10 +303,14 @@ MIMES = {'image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'au
          'audio/wav', 'audio/x-wav', 'audio/mpeg', 'audio/ogg', 'video/ogg', 'application/ogg'}
 
 
-def validate_media(path, mime, expected_kind):
+def validate_media(path, mime, expected_kind, *, allow_animation=False):
     with Path(path).open('rb') as stream:
         head = stream.read(32)
-    if head.startswith(b'\xff\xd8\xff'):
+    animated = head.startswith((b'GIF87a', b'GIF89a'))
+    if animated:
+        need(allow_animation, 'Animated GIF requires explicit full-animation validation')
+        allowed, suffix, kind = {'image/gif'}, '.gif', 'image'
+    elif head.startswith(b'\xff\xd8\xff'):
         allowed, suffix, kind = {'image/jpeg'}, '.jpg', 'image'
     elif head.startswith(b'\x89PNG\r\n\x1a\n'):
         allowed, suffix, kind = {'image/png'}, '.png', 'image'
@@ -308,10 +331,16 @@ def validate_media(path, mime, expected_kind):
     else:
         raise MaterialError('Unsupported media magic; HTML/SVG/archive/executable forbidden')
     need(mime in allowed and kind == expected_kind, 'MIME, file magic and declared media kind disagree')
-    command = ['ffprobe', '-v', 'error', '-protocol_whitelist', 'file,pipe', '-show_entries',
-               'stream=codec_type,width,height:format=duration,format_name', '-of', 'json', str(path)]
+    command = ['ffprobe', '-v', 'error', '-protocol_whitelist', 'file,pipe']
+    if animated:
+        command += ['-count_frames']
+    command += ['-show_entries', 'stream=codec_type,width,height,nb_read_frames:format=duration,format_name',
+                '-of', 'json', str(path)]
+    # Decoding needs executable/locale/temp settings, not the parent's credentials.
+    child_env = {k: v for k, v in os.environ.items() if k in {
+        'PATH', 'LANG', 'LC_ALL', 'LC_CTYPE', 'TZ', 'TMPDIR', 'TMP', 'TEMP', 'SYSTEMROOT', 'WINDIR'}}
     try:
-        raw = subprocess.run(command, check=True, capture_output=True, text=True, timeout=15)
+        raw = subprocess.run(command, check=True, capture_output=True, text=True, timeout=15, env=child_env)
         need(len(raw.stdout) <= 65536, 'Media metadata exceeds limit')
         info = json.loads(raw.stdout)
         streams = info['streams']
@@ -323,18 +352,30 @@ def validate_media(path, mime, expected_kind):
             w, h = stream['width'], stream['height']
             need(type(w) is int and type(h) is int and 0 < w <= 16384 and 0 < h <= 16384
                  and w * h <= 40_000_000, 'Image/video dimensions exceed decode budget')
+        animation = None
+        if animated:
+            frames = int(video[0]['nb_read_frames'])
+            duration = float(info['format']['duration'])
+            need(1 < frames <= 300 and math.isfinite(duration) and 0 < duration <= 30
+                 and frames * video[0]['width'] * video[0]['height'] <= 200_000_000,
+                 'Animation frame/duration/decode-work budget exceeded or not animated')
+            animation = {'animated': True, 'frames': frames, 'duration_ms': round(duration * 1000),
+                         'editing_compatible': False}
         if kind != 'image':
             duration = float(info['format']['duration'])
             need(math.isfinite(duration) and 0 < duration <= 600, 'Media duration exceeds 10 minute limit')
         decode = ['ffmpeg', '-nostdin', '-v', 'error', '-xerror', '-max_alloc', '67108864', '-threads', '1',
                   '-protocol_whitelist', 'file,pipe', '-i', str(path)]
-        if kind == 'image':
+        if kind == 'image' and not animated:
             decode += ['-frames:v', '1']
         subprocess.run(decode + ['-f', 'null', '-'], check=True, stdout=subprocess.DEVNULL,
-                       stderr=subprocess.DEVNULL, timeout=15)
+                       stderr=subprocess.DEVNULL, timeout=15, env=child_env)
     except (OSError, subprocess.SubprocessError, KeyError, ValueError) as exc:
         raise MaterialError('Media probe/decode failed or exceeded validation deadline') from exc
-    return {'mime': mime, 'media_type': kind, 'suffix': suffix, 'probe': info, 'decoded': True}
+    result = {'mime': mime, 'media_type': kind, 'suffix': suffix, 'probe': info, 'decoded': True}
+    if animation:
+        result['animation'] = animation
+    return result
 
 
 class DownloadLock:

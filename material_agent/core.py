@@ -275,8 +275,10 @@ class Library:
                 id TEXT PRIMARY KEY, document TEXT NOT NULL, created_at TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS download_events (
                 seq INTEGER PRIMARY KEY, attempt_id TEXT NOT NULL, record_id TEXT NOT NULL, document TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS material_withdrawals (
+                seq INTEGER PRIMARY KEY, record_id TEXT NOT NULL REFERENCES records(id), document TEXT NOT NULL);
         ''')
-        for table in ('blobs', 'records', 'reviews', 'usages', 'handoffs', 'download_events'):
+        for table in ('blobs', 'records', 'reviews', 'usages', 'handoffs', 'download_events', 'material_withdrawals'):
             for action in ('UPDATE', 'DELETE'):
                 self.db.execute(f'CREATE TRIGGER IF NOT EXISTS immutable_{table}_{action} BEFORE {action} ON {table} '
                                 "BEGIN SELECT RAISE(ABORT, 'append-only material record'); END")
@@ -431,6 +433,9 @@ class Library:
             issues.append('Unknown/restricted license requires new verification')
         if rights['checked_at'] is None or not at - timedelta(days=30) <= instant(rights['checked_at']) <= at:
             issues.append('License verification missing/older than 30 days')
+        if any(e['scope'] == 'license_terms' and not at - timedelta(days=30) <= instant(e['retrieved_at']) <= at
+               for e in rights['evidence']):
+            issues.append('Underlying license terms evidence expired; a new API item does not refresh it')
         if use['commercial'] and rights['commercial_use'] != 'allowed':
             issues.append('Commercial use not explicitly allowed')
         if use['derivatives'] and rights['derivatives'] != 'allowed':
@@ -452,6 +457,8 @@ class Library:
         context(use)
         row = self.get(record_id)
         issues = self._rights_issues(row['document'], use, at)
+        if self.db.execute('SELECT 1 FROM material_withdrawals WHERE record_id=?', (record_id,)).fetchone():
+            issues.append('Material withdrawn; stop use and resolve removal requirements')
         if at < instant(row['added_at']) or (row['imported_at'] and at < instant(row['imported_at'])):
             issues.append('Evaluation predates material registration/import')
         path = None
@@ -629,10 +636,14 @@ class Library:
 
     def history(self, record_id):
         row = self.get(record_id)
-        return {**row, 'download_record': json.loads(row['download_record']) if row['download_record'] else None,
+        out = {**row, 'download_record': json.loads(row['download_record']) if row['download_record'] else None,
                 'reviews': [json.loads(r[0]) for r in self.db.execute('SELECT receipt FROM reviews WHERE record_id=? ORDER BY seq', (record_id,))],
                 'usages': [json.loads(r[0]) for r in self.db.execute('SELECT receipt FROM usages WHERE record_id=? ORDER BY id', (record_id,))],
                 'download_events': self.download_history(record_id)}
+        if self.db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='provider_imports'").fetchone():
+            provenance = self.db.execute('SELECT document FROM provider_imports WHERE record_id=?', (record_id,)).fetchone()
+            out['provider_provenance'] = json.loads(provenance[0]) if provenance else None
+        return out
 
     def download_history(self, record_id):
         identity(record_id)

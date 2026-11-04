@@ -1,5 +1,7 @@
 # 单文件公开素材下载与入库
 
+本页描述原Commons下载入口。其他已接来源见 [Pexels/Pixabay、Noto及Mixkit目录](material-providers.md)，不放宽本入口域名或许可白名单。
+
 现可显式执行 download。其他 plan/search/add/review/handoff/verify/used/show 命令离线。
 本次没有登录、读取 Google 会话、保存凭据、上传素材或发布视频。
 

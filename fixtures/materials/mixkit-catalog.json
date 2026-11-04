@@ -1,0 +1,199 @@
+{
+  "schema": "material_source_catalog/v1",
+  "checked_at": "2026-11-04T10:18:33Z",
+  "items": [
+    {
+      "id": "mixkit_manual_select_click_20261104",
+      "provider": "mixkit",
+      "kind": "sfx",
+      "automation_allowed": false,
+      "blocked_reason": "Mixkit User Terms 第 3 条纳入 Envato Acceptable Use Policy 与 Fair Use Policy；前者第 6(e) 条禁止未经 Envato 明确授权的自动访问、搜索、浏览、抓取或下载，后者同样禁止自动化访问或下载。免费使用许可和无需注册不代表允许自动化获取。",
+      "source_version": "2026-11-04T10:18:33Z 核查官方 Click 列表页 https://mixkit.co/free-sound-effects/click/；以完整标题 Select click、显示时长 0:01、Interface / Click 标签定位。此 ID 仅为本地内部 ID；未确认官方单项 ID、独立素材 permalink 或文件 URL。",
+      "record": {
+        "schema": "material_record/v1",
+        "id": "mixkit_manual_select_click_20261104",
+        "title": "Select click",
+        "description": "界面选择操作的短音效候选；官方列表显示 0:01。仅保存待人工匹配的元数据，未下载、试听或批准使用，不能证明产品操作实测。",
+        "media_type": "audio",
+        "tags": ["sfx", "interface", "click", "界面", "点击", "待人工导入"],
+        "source": {
+          "provider": "Mixkit",
+          "page_url": "https://mixkit.co/free-sound-effects/click/",
+          "creator": "官方列表未标明作者",
+          "retrieved_at": "2026-11-04T10:18:33Z",
+          "access": "public_no_login",
+          "download_url": null
+        },
+        "rights": {
+          "status": "restricted",
+          "license_id": "Mixkit Sound Effects Free License",
+          "license_url": "https://mixkit.co/license/modal/sfxFree/",
+          "commercial_use": "allowed",
+          "derivatives": "allowed",
+          "attribution_required": false,
+          "attribution_text": "可保留来源 credit：Select click — Mixkit — Mixkit Sound Effects Free License；官方列表未标明作者。官网音效首页说明无需署名。",
+          "restrictions": [
+            "仅在人工确认官方列表中的准确条目、正常手工取得原文件并复核本次用途后使用；本记录不批准自动获取或剪辑交付。",
+            "音效须与其他内容组合为范围更大、性质不同的最终作品；不得单独再分发、作为素材库存提供、嵌入工具或模板再分发，或随源文件再分发。",
+            "不得冒充原创，不得注册到版权或权利管理服务。",
+            "许可允许商业或非商业的网络/社交视频、广告、播客、游戏、影视、演示及电视/广播等用途，但仍受 Mixkit User Terms 和纳入的 Envato 政策约束。",
+            "未经 Envato 明确授权，不得用脚本、bot、自动工具或 API 自动访问、搜索、浏览、复制、抓取或下载；不得规避访问限制。"
+          ],
+          "checked_at": "2026-11-04T10:18:33Z",
+          "evidence": [
+            {
+              "url": "https://mixkit.co/free-sound-effects/click/",
+              "retrieved_at": "2026-11-04T10:18:33Z",
+              "scope": "asset_license",
+              "excerpt": "官方 Click 列表显示 Select click、Interface / Click 标签、0:01 及 Download Free SFX 按钮；列表说明这些音效适用 Mixkit License。未显示作者，未确认独立素材页或下载文件。"
+            },
+            {
+              "url": "https://mixkit.co/license/modal/sfxFree/",
+              "retrieved_at": "2026-11-04T10:18:33Z",
+              "scope": "license_terms",
+              "excerpt": "官方 Sound Effects Free License 允许免费商业/非商业最终作品及修改；音效须与其他内容组合，不能单独、作为素材库存、工具/模板或随源文件再分发，不能冒充原创或注册权利管理服务。"
+            },
+            {
+              "url": "https://mixkit.co/free-sound-effects/",
+              "retrieved_at": "2026-11-04T10:18:33Z",
+              "scope": "license_terms",
+              "excerpt": "官方音效首页说明无需署名和注册，并说明可用于商业及个人项目；此说明不授权自动化访问或下载。"
+            },
+            {
+              "url": "https://mixkit.co/terms/",
+              "retrieved_at": "2026-11-04T10:18:33Z",
+              "scope": "license_terms",
+              "excerpt": "2025-10-02 修订的 User Terms 第 3 条纳入 Envato Acceptable Use Policy 和 Fair Use Policy；第 9.10 条另禁止脚本或 bot 批量下载。"
+            },
+            {
+              "url": "https://help.elements.envato.com/hc/en-us/articles/31035788503321-Acceptable-Use-Policy",
+              "retrieved_at": "2026-11-04T10:18:33Z",
+              "scope": "license_terms",
+              "excerpt": "2026-09-02 修订的 Acceptable Use Policy 第 6(e) 条禁止未经 Envato 明确提供或授权的脚本、bot、自动工具/API 访问、搜索、浏览、复制、抓取、下载或获取网站及素材的任何部分；定义包含 Mixkit。"
+            },
+            {
+              "url": "https://help.elements.envato.com/hc/en-us/articles/360000621743-Fair-Use-Policy",
+              "retrieved_at": "2026-11-04T10:18:33Z",
+              "scope": "license_terms",
+              "excerpt": "2026-10-05 修订的 Fair Use Policy 适用于通过用户条款引用该政策的网站；禁止用脚本、bot、自动工具、未授权 API 或其他自动方式访问或下载内容，也禁止下载没有适当使用意图的内容。"
+            }
+          ],
+          "allowed_distributions": ["internal", "public_social", "paid_advertising"],
+          "valid_until": null,
+          "share_alike_required": false
+        },
+        "risks": [
+          "此项仅由官方列表页和完整标题定位；需人工在官方页面匹配标题、时长和标签，确认文件与许可后创建新记录，不能假定它具有已核实的单项 permalink 或 provider ID。",
+          "自动化访问及下载受官方政策禁止；不得通过 bot 浏览器代下载、换入口或绕过登录、403、robots 等限制。",
+          "未下载或试听，未核验实际文件类型、时长、大小、哈希、第三方内容或适合本次成片的音量与语义。",
+          "本记录保持 restricted；没有本地文件、人工用途审核或实际使用记录，不可直接交付剪辑；手工导入也不会自动获得使用批准。"
+        ]
+      },
+      "evidence_urls": [
+        "https://mixkit.co/free-sound-effects/click/",
+        "https://mixkit.co/license/modal/sfxFree/",
+        "https://mixkit.co/free-sound-effects/",
+        "https://mixkit.co/terms/",
+        "https://help.elements.envato.com/hc/en-us/articles/31035788503321-Acceptable-Use-Policy",
+        "https://help.elements.envato.com/hc/en-us/articles/360000621743-Fair-Use-Policy"
+      ]
+    },
+    {
+      "id": "mixkit_manual_tech_house_vibes_20261104",
+      "provider": "mixkit",
+      "kind": "music",
+      "automation_allowed": false,
+      "blocked_reason": "Mixkit User Terms 第 3 条纳入 Envato Acceptable Use Policy 与 Fair Use Policy；前者第 6(e) 条禁止未经 Envato 明确授权的自动访问、搜索、浏览、抓取或下载，后者同样禁止自动化访问或下载。免费使用许可和无需注册不代表允许自动化获取。",
+      "source_version": "2026-11-04T10:18:33Z 核查官方 Electronica 列表页 https://mixkit.co/free-stock-music/electronica/；以完整标题 Tech House vibes、作者 Alejandro Magaña (A. M.)、显示时长 1:42 定位。此 ID 仅为本地内部 ID；未确认官方单项 ID、独立素材 permalink 或文件 URL。",
+      "record": {
+        "schema": "material_record/v1",
+        "id": "mixkit_manual_tech_house_vibes_20261104",
+        "title": "Tech House vibes",
+        "description": "工具介绍视频的背景音乐候选；官方列表显示 1:42，标签含 Relaxed、Bass、Drums、Background、Intro。仅保存待人工匹配元数据，未下载、试听或批准使用。",
+        "media_type": "audio",
+        "tags": ["music", "bgm", "electronica", "background", "intro", "背景音乐", "待人工导入"],
+        "source": {
+          "provider": "Mixkit",
+          "page_url": "https://mixkit.co/free-stock-music/electronica/",
+          "creator": "Alejandro Magaña (A. M.)",
+          "retrieved_at": "2026-11-04T10:18:33Z",
+          "access": "public_no_login",
+          "download_url": null
+        },
+        "rights": {
+          "status": "restricted",
+          "license_id": "Mixkit Stock Music Free License",
+          "license_url": "https://mixkit.co/license/modal/musicFree/",
+          "commercial_use": "allowed",
+          "derivatives": "allowed",
+          "attribution_required": false,
+          "attribution_text": "可保留作者 credit：Tech House vibes — Alejandro Magaña (A. M.) — Mixkit — Mixkit Stock Music Free License。官网音乐首页说明无需署名。",
+          "restrictions": [
+            "仅在人工确认官方列表中的准确条目、正常手工取得原文件并复核本次用途后使用；本记录不批准自动获取或剪辑交付。",
+            "可用于商业/非商业的网络和社交视频、网络营销广告、播客、教育及互联网点播；internal 在本目录中仅指这些获准视频用途的内部制作/审核，不扩大平台范围。",
+            "禁止用于 CD/DVD、电子游戏、电视或电台广播；不得将 public_social 或 paid_advertising 范围解释为广播或游戏授权。",
+            "虽可复制、修改并融入获准视频作品，但不得 remix 或并入纯音乐曲目，不得冒充原创，不得注册版权或权利管理服务。",
+            "使用仍受 Mixkit User Terms 和纳入的 Envato 政策约束；未经 Envato 明确授权，不得用脚本、bot、自动工具或 API 自动访问、搜索、浏览、复制、抓取或下载，不得规避访问限制。"
+          ],
+          "checked_at": "2026-11-04T10:18:33Z",
+          "evidence": [
+            {
+              "url": "https://mixkit.co/free-stock-music/electronica/",
+              "retrieved_at": "2026-11-04T10:18:33Z",
+              "scope": "asset_license",
+              "excerpt": "官方 Electronica 列表显示 Tech House vibes、作者 Alejandro Magaña (A. M.)、1:42 及 Download Free Music 按钮；列表说明曲目适用 Mixkit License。未确认独立素材页或下载文件。"
+            },
+            {
+              "url": "https://mixkit.co/license/modal/musicFree/",
+              "retrieved_at": "2026-11-04T10:18:33Z",
+              "scope": "license_terms",
+              "excerpt": "官方 Stock Music Free License 允许免费商业/非商业网络及社交平台视频、播客和广告，并允许复制和修改；不允许 CD/DVD、游戏、电视/广播、remix 或并入纯音乐曲目，也不得冒充原创或注册权利管理服务。"
+            },
+            {
+              "url": "https://mixkit.co/free-stock-music/",
+              "retrieved_at": "2026-11-04T10:18:33Z",
+              "scope": "license_terms",
+              "excerpt": "官方音乐首页说明曲目无需署名和注册，可作为视频背景音乐；该说明不授权自动化访问或下载。"
+            },
+            {
+              "url": "https://mixkit.co/terms/",
+              "retrieved_at": "2026-11-04T10:18:33Z",
+              "scope": "license_terms",
+              "excerpt": "2025-10-02 修订的 User Terms 第 3 条纳入 Envato Acceptable Use Policy 和 Fair Use Policy；第 9.10 条另禁止脚本或 bot 批量下载。"
+            },
+            {
+              "url": "https://help.elements.envato.com/hc/en-us/articles/31035788503321-Acceptable-Use-Policy",
+              "retrieved_at": "2026-11-04T10:18:33Z",
+              "scope": "license_terms",
+              "excerpt": "2026-09-02 修订的 Acceptable Use Policy 第 6(e) 条禁止未经 Envato 明确提供或授权的脚本、bot、自动工具/API 访问、搜索、浏览、复制、抓取、下载或获取网站及素材的任何部分；定义包含 Mixkit。"
+            },
+            {
+              "url": "https://help.elements.envato.com/hc/en-us/articles/360000621743-Fair-Use-Policy",
+              "retrieved_at": "2026-11-04T10:18:33Z",
+              "scope": "license_terms",
+              "excerpt": "2026-10-05 修订的 Fair Use Policy 适用于通过用户条款引用该政策的网站；禁止用脚本、bot、自动工具、未授权 API 或其他自动方式访问或下载内容，也禁止下载没有适当使用意图的内容。"
+            }
+          ],
+          "allowed_distributions": ["internal", "public_social", "paid_advertising"],
+          "valid_until": null,
+          "share_alike_required": false
+        },
+        "risks": [
+          "此项仅由官方列表页、完整标题和作者定位；需人工在官方页面匹配标题、作者及时长，确认文件与许可后创建新记录，不能假定它具有已核实的单项 permalink 或 provider ID。",
+          "自动化访问及下载受官方政策禁止；不得通过 bot 浏览器代下载、换入口或绕过登录、403、robots 等限制。",
+          "未下载或试听，未核验实际文件类型、时长、大小、哈希、第三方权益或适合旁白及节奏的音量。",
+          "音乐许可与音效许可范围不同；需人工确认成片仅在获准网络/社交/广告场景使用，平台版权声明或权利管理 claim 仍须处理。",
+          "本记录保持 restricted；没有本地文件、人工用途审核或实际使用记录，不可直接交付剪辑；手工导入也不会自动获得使用批准。"
+        ]
+      },
+      "evidence_urls": [
+        "https://mixkit.co/free-stock-music/electronica/",
+        "https://mixkit.co/license/modal/musicFree/",
+        "https://mixkit.co/free-stock-music/",
+        "https://mixkit.co/terms/",
+        "https://help.elements.envato.com/hc/en-us/articles/31035788503321-Acceptable-Use-Policy",
+        "https://help.elements.envato.com/hc/en-us/articles/360000621743-Fair-Use-Policy"
+      ]
+    }
+  ]
+}
