@@ -88,6 +88,16 @@ class MotionValidationTests(unittest.TestCase):
         self.plan['evidence_areas'][0]['height'] = 300
         with self.assertRaises(motion.EditError): self.validate()
 
+    def test_reaction_shares_office_bounds_and_label_limits(self):
+        self.plan['kind'] = 'office_reaction'
+        with self.assertRaises(motion.EditError): self.validate()
+        self.media['streams'][0].update(width=1080, height=1920)
+        self.plan['annotation_area'] = {'x':60,'y':650,'width':960,'height':512}
+        self.plan['evidence_areas'] = [{'x':60,'y':400,'width':960,'height':200}]
+        self.assertEqual(self.validate()[2],(1080,1920,30))
+        self.plan['items'] = ['label too long','stop','check']
+        with self.assertRaises(motion.EditError): self.validate()
+
 
 @unittest.skipUnless(importlib.util.find_spec('PIL') and motion.FONT.is_file() and shutil.which('ffmpeg'),
                      'Actual local renderer requires Pillow, reviewed macOS font and FFmpeg')
@@ -173,6 +183,21 @@ class RealMotionTests(unittest.TestCase):
         result = json.loads((self.root / 'timeout/result.json').read_text())
         self.assertFalse(result['final_approved'])
         self.assertFalse((self.root / 'timeout/original-motion.mp4').exists())
+
+    def test_reaction_pose_changes_face_and_stop_hand_without_product_claim(self):
+        from PIL import ImageChops
+        poses=[motion.illustration('office_reaction',['周报','先别发','先核对'],960,512,i,45)
+               for i in (0,22,44)]
+        for a,b in zip(poses,poses[1:]):
+            self.assertIsNotNone(ImageChops.difference(a.convert('RGB'),b.convert('RGB')).crop((270,85,470,335)).getbbox())
+        old=motion.illustration('office_pause',['周报','先别发','先核对'],960,512,22,45)
+        self.assertIsNotNone(ImageChops.difference(old.convert('RGB'),poses[1].convert('RGB')).crop((270,135,325,325)).getbbox())
+        plan=json.loads(self.plan.read_text());plan.update(kind='office_reaction',items=['周报','先别发','先核对'],
+            annotation_area={'x':10,'y':170,'width':620,'height':300},evidence_areas=[{'x':0,'y':0,'width':640,'height':160}])
+        self.plan.write_text(json.dumps(plan,ensure_ascii=False))
+        result=motion.render_motion(self.plan,self.root/'reaction')
+        self.assertEqual((result['frames'],result['audio_tracks'],result['full_decode_exit']),(30,0,0))
+        self.assertFalse(result['automatic_semantic_or_rights_approval'])
 
 
 if __name__ == '__main__': unittest.main()

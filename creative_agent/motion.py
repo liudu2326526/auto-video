@@ -41,13 +41,13 @@ def validate_motion(path):
     if p['schema'] != 'original_editorial_motion/v1':
         raise EditError('Unsupported motion schema')
     identity(p['id']); src = bound_file(p['source'], pp.parent)
-    if p['kind'] not in {'paper_stack', 'review_advice', 'office_pause'}:
+    if p['kind'] not in {'paper_stack', 'review_advice', 'office_pause', 'office_reaction'}:
         raise EditError('Only original geometric illustration types supported')
     if (not isinstance(p['items'], list) or len(p['items']) != 3
             or any(not isinstance(x, str) or not x.strip() or len(x) > 10
                    or any(ord(c) < 32 for c in x) for x in p['items'])):
         raise EditError('Exactly three short editorial labels required')
-    if p['kind'] == 'office_pause' and (len(p['items'][0]) > 4 or any(len(x) > 8 for x in p['items'][1:])):
+    if p['kind'] in {'office_pause', 'office_reaction'} and (len(p['items'][0]) > 4 or any(len(x) > 8 for x in p['items'][1:])):
         raise EditError('Office paper label at most four characters; action labels at most eight')
     m = probe(src); vs = [s for s in m['streams'] if s['codec_type'] == 'video']
     if len(vs) != 1 or any(s['codec_type'] == 'audio' for s in m['streams']):
@@ -66,7 +66,7 @@ def validate_motion(path):
     area = rectangle(p['annotation_area'], w, h)
     if not 300 <= area[2] <= 1024 or not 160 <= area[3] <= 512:
         raise EditError('Annotation rectangle must be 300..1024 by 160..512 pixels')
-    if p['kind'] == 'office_pause' and (area[2] < 600 or area[3] < 300):
+    if p['kind'] in {'office_pause', 'office_reaction'} and (area[2] < 600 or area[3] < 300):
         raise EditError('Office action requires at least 600 by 300 pixels')
     if not isinstance(p['evidence_areas'], list) or not 1 <= len(p['evidence_areas']) <= 12:
         raise EditError('Explicit bounded evidence areas required')
@@ -89,9 +89,9 @@ def illustration(kind, items, width, height, index, frames):
     def font(size): return ImageFont.truetype(str(FONT), max(12, round(size * scale)))
     def text(x, y, label, size=38, fill='#E9EDF5'):
         d.text((round(x * width / 960), round(y * height / 300)), label, font=font(size), fill=fill)
-    text(24, 12, '情境动画 · 非产品界面' if kind == 'office_pause' else '情境示意 · 编辑提示', 30, '#9EABC1')
+    text(24, 12, '情境动画 · 非产品界面' if kind in {'office_pause', 'office_reaction'} else '情境示意 · 编辑提示', 30, '#9EABC1')
     phase = index / max(1, frames - 1)
-    if kind == 'office_pause':
+    if kind in {'office_pause', 'office_reaction'}:
         # Original abstract office character: a paper moves out, is stopped,
         # then returns for checking. No stock, real likeness, product controls,
         # factual document contents, or simulated product execution.
@@ -115,11 +115,35 @@ def illustration(kind, items, width, height, index, frames):
         d.rounded_rectangle(box(80, 205, 265, 333), radius=max(2, round(6*sx)), fill='#75DBCE')
         line([(172, 350), (172, 400), (120, 400), (225, 400)], '#61758B', 12)
         # Explicitly synthetic, geometric person; no particular person's face.
-        d.ellipse(box(345, 100, 465, 220), fill='#FFCE92')
+        reaction = kind == 'office_reaction'
+        head_y = -14 if reaction and stop else 6 if reaction and phase >= .65 else 0
+        d.ellipse(box(345, 100 + head_y, 465, 220 + head_y), fill='#FFCE92')
         d.polygon([point(x,y) for x,y in [(355,230),(445,230),(490,418),(310,418)]], fill='#648DED')
-        eye_y = 154 if stop else 161
-        for x in (383, 425): d.ellipse(box(x-5, eye_y-5, x+5, eye_y+5), fill='#172640')
-        line([(390, 193), (422, 193 if not stop else 183)], '#684936', 4)
+        eye_y = (154 if stop else 161) + head_y
+        for x in (383, 425):
+            radius = 8 if reaction and stop else 5
+            d.ellipse(box(x-radius, eye_y-radius, x+radius, eye_y+radius), fill='#172640')
+        if reaction:
+            # Three original poses: confident send, surprised stop, focused recheck.
+            # This is an expressive fictional cutaway, never real customer reaction.
+            brow_y = eye_y - (25 if stop else 16)
+            line([(374,brow_y),(392,brow_y-5 if stop else brow_y)], '#684936', 5)
+            line([(416,brow_y-5 if stop else brow_y),(434,brow_y)], '#684936', 5)
+            if stop:
+                d.ellipse(box(397, 180+head_y, 417, 205+head_y), fill='#684936')
+                # The other hand visibly interrupts the handover, away from evidence.
+                line([(355,270),(305,307),(296,205)], '#FFCE92', 23)
+                d.rounded_rectangle(box(277,162,313,219),radius=max(2,round(8*sx)),fill='#FFCE92')
+                for x in (280,290,300,310): line([(x,185),(x-2,143)], '#FFCE92', 7)
+            elif phase >= .65:
+                line([(390,193+head_y),(422,193+head_y)], '#684936', 5)
+                line([(355,270),(308,312),(275,275)], '#FFCE92', 23)
+                line([(277,274),(246,252)], '#FFCE92', 10)
+            else:
+                d.arc(box(382,169,429,202),0,180,fill='#684936',width=max(1,round(5*min(sx,sy))))
+                line([(355,270),(314,348),(339,374)], '#FFCE92', 23)
+        else:
+            line([(390, 193), (422, 193 if not stop else 183)], '#684936', 4)
         # The moving paper is generic, not the source/Gamma report.
         d.rounded_rectangle(box(doc_x, 238, doc_x+135, 397), radius=max(2, round(9*sx)), fill='#F5EBCF')
         label(doc_x+12, 249, items[0], 24, '#28384B')
