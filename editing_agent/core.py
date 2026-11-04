@@ -86,7 +86,8 @@ def validate(plan_path):
     """Separate versioned GUI contract; never silently consume historic FFmpeg plans."""
     plan_path = Path(plan_path).resolve()
     p = read_json(plan_path)
-    fields(p, ['schema', 'plan_id', 'script', 'output', 'assets', 'video', 'subtitles', 'narration', 'transitions'])
+    fields(p, ['schema', 'plan_id', 'script', 'output', 'assets', 'video', 'subtitles', 'narration', 'transitions'],
+           ['visual_alignment'])
     if p['schema'] != 'jianying_edit_plan/v1':
         raise EditError('Unsupported plan schema')
     identity(p['plan_id'])
@@ -203,7 +204,135 @@ def validate(plan_path):
         if t['duration_frames'] > min(c['timeline_out_frame'] - c['timeline_in_frame'] for c in p['video']):
             raise EditError('Transition exceeds clip length')
         seen.add(t['at_frame'])
+    alignment_rows(p)
     return p, assets
+
+
+def alignment_rows(plan):
+    """Validate operator-declared visible intervals; this cannot infer semantics."""
+    rows = plan.get('visual_alignment')
+    if rows is None:
+        return []  # Legacy preparation is allowed, semantic acceptance is not.
+    cues = {c['line_id']: c for c in plan['subtitles']}
+    clips = {c['id']: c for c in plan['video']}
+    if not isinstance(rows, list) or len(rows) != len(cues):
+        raise EditError('One visual alignment per subtitle required')
+    seen = set()
+    for row in rows:
+        fields(row, ['line_id', 'clip_id', 'source_in_frame', 'source_out_frame', 'visible_summary'])
+        if row['line_id'] not in cues or row['line_id'] in seen or row['clip_id'] not in clips:
+            raise EditError('Unknown or duplicate visual alignment identity')
+        cue, clip = cues[row['line_id']], clips[row['clip_id']]
+        if not clip['timeline_in_frame'] <= cue['in_frame'] < cue['out_frame'] <= clip['timeline_out_frame']:
+            raise EditError('Subtitle crosses its declared visible clip')
+        start = integer(row['source_in_frame'])
+        end = integer(row['source_out_frame'], 1)
+        expected = clip['source_in_frame'] + cue['in_frame'] - clip['timeline_in_frame']
+        if start != expected or end != expected + cue['out_frame'] - cue['in_frame']:
+            raise EditError('Visual alignment source/timeline mapping mismatch')
+        if not isinstance(row['visible_summary'], str) or not row['visible_summary'].strip():
+            raise EditError('Actual visible summary required; not a success assertion')
+        seen.add(row['line_id'])
+    return rows
+
+
+def checked_review(plan, receipt, evidence_base):
+    fields(receipt, ['schema', 'plan_sha256', 'export_sha256', 'decision', 'reviewer', 'observed',
+                     'details', 'shots', 'evidence'])
+    if receipt['schema'] != 'jianying_alignment_review/v1' or receipt['decision'] not in {'approved', 'rejected'}:
+        raise EditError('Unsupported alignment review')
+    if receipt['reviewer'] not in {'operator', 'user'}:
+        raise EditError('Explicit review provenance required')
+    for key in ('observed', 'details'):
+        if not isinstance(receipt[key], str) or not receipt[key].strip():
+            raise EditError('Actual review observation required')
+    for key in ('plan_sha256', 'export_sha256'):
+        if key in receipt and (not isinstance(receipt[key], str) or not re.fullmatch(r'[0-9a-f]{64}', receipt[key])):
+            raise EditError('Review must bind exact SHA256 identities')
+    evidence = receipt['evidence']
+    if not isinstance(evidence, list) or len(evidence) > 100:
+        raise EditError('Bounded review evidence list required')
+    for item in evidence:
+        fields(item, ['path', 'sha256'])
+        if not isinstance(item['path'], str) or re.match(r'^[A-Za-z][A-Za-z0-9+.-]*:', item['path']):
+            raise EditError('Review evidence must be local')
+        if digest(local_file(evidence_base / item['path'])) != item['sha256']:
+            raise EditError('Alignment evidence changed')
+    shots = receipt['shots']
+    if not isinstance(shots, list):
+        raise EditError('Review shots must be a list')
+    if receipt['decision'] == 'rejected':
+        if shots:
+            raise EditError('Use rejection details, not approval rows, for rejected exports')
+        return
+    rows = alignment_rows(plan)
+    if not rows or len(shots) != len(rows) or not evidence:
+        raise EditError('Approval requires every mapped cue and real local evidence')
+    cues = {c['line_id']: c for c in plan['subtitles']}
+    mappings = {r['line_id']: r for r in rows}
+    seen = set()
+    for shot in shots:
+        fields(shot, ['line_id', 'clip_id', 'text', 'in_frame', 'out_frame', 'verdict',
+                      'observation', 'evidence_index'])
+        lid = shot['line_id']
+        if lid not in cues or lid in seen:
+            raise EditError('Unknown or duplicate reviewed cue')
+        cue = cues[lid]
+        if (shot['clip_id'] != mappings[lid]['clip_id'] or shot['text'] != cue['text']
+                or type(shot['in_frame']) is not int or type(shot['out_frame']) is not int
+                or (shot['in_frame'], shot['out_frame']) != (cue['in_frame'], cue['out_frame'])
+                or shot['verdict'] != 'matched' or not isinstance(shot['observation'], str)
+                or not shot['observation'].strip()):
+            raise EditError('Review must explicitly match each exact cue to its actual picture')
+        integer(shot['evidence_index'], 0, len(evidence) - 1)
+        seen.add(lid)
+
+
+def review_status(attempt, plan, exported):
+    plan_sha, export_sha = digest(attempt / 'edit_plan.json'), digest(exported)
+    log = attempt / 'alignment-reviews.jsonl'
+    result = {'decision': 'not_reviewed', 'review_sha256': None, 'reviewer': None}
+    if log.is_symlink():
+        raise EditError('Review log cannot be a symlink')
+    for line in log.read_text().splitlines() if log.exists() else []:
+        entry = json.loads(line)
+        path = local_file(entry['path'])
+        if digest(path) != entry['sha256']:
+            raise EditError('Alignment review receipt changed')
+        receipt = read_json(path)
+        # Unrelated/historic exports never grant approval to these bytes.
+        if receipt['export_sha256'] != export_sha:
+            continue
+        # Changing/reformatting a plan cannot erase rejection of identical media.
+        if receipt['decision'] != 'rejected' and receipt['plan_sha256'] != plan_sha:
+            continue
+        checked_review(plan, receipt, path.parent)
+        if result['decision'] == 'rejected' and receipt['decision'] == 'approved':
+            continue
+        result = {'decision': receipt['decision'], 'review_sha256': entry['sha256'],
+                  'reviewer': receipt['reviewer']}
+    return result
+
+
+def review(attempt, exported, evidence_path):
+    """Append an attributed, hash-bound semantic decision; never edit old media."""
+    attempt = Path(attempt).resolve()
+    exported, evidence = local_file(exported), local_file(evidence_path)
+    plan = read_json(attempt / 'edit_plan.json')
+    receipt = read_json(evidence)
+    checked_review(plan, receipt, evidence.parent)
+    if (receipt['plan_sha256'], receipt['export_sha256']) != (digest(attempt / 'edit_plan.json'), digest(exported)):
+        raise EditError('Review does not bind this frozen plan and export')
+    current = review_status(attempt, plan, exported)
+    if current['decision'] == 'rejected' and receipt['decision'] == 'approved':
+        raise EditError('Cannot clear rejection of unchanged media; correct the export and review new bytes')
+    entry = {'path': str(evidence), 'sha256': digest(evidence)}
+    log = attempt / 'alignment-reviews.jsonl'
+    lines = log.read_text().splitlines() if log.exists() else []
+    if not any(json.loads(line) == entry for line in lines):
+        with log.open('a') as f:
+            f.write(json.dumps(entry) + '\n')
+    return {'status': 'review_recorded', **review_status(attempt, plan, exported)}
 
 
 def stamp(frames):
@@ -355,8 +484,15 @@ def verify(attempt, exported, project):
         missing.append('export_outcome_reconciliation')
     if latest('needs_input') > latest('blocker_resolved'):
         missing.append('blocker_resolution')
+    semantic = review_status(attempt, p, exported)
+    if not alignment_rows(p):
+        missing.append('visual_alignment_plan')
+    if semantic['decision'] != 'approved':
+        missing.append('shot_alignment_review')
+    status = 'rejected' if semantic['decision'] == 'rejected' else (
+        'verified_with_recorded_gui_review' if not missing else 'partial')
     report = {'schema': 'jianying_edit_result/v1', 'plan_id': p['plan_id'],
-              'status': 'verified_with_recorded_gui_review' if not missing else 'partial',
+              'status': status, 'alignment_review': semantic,
               'video': {'path': str(exported), 'sha256': digest(exported), 'media': m,
                         'full_decode_passed': True, 'audio_max_dbfs': float(match.group(1))},
               'project': {'path': str(project), 'files': {str(f.relative_to(project)): digest(f) for f in project_files}},

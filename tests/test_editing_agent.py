@@ -44,6 +44,29 @@ def save(path, value):
     path.write_text(json.dumps(value, ensure_ascii=False), encoding='utf-8')
 
 
+def add_alignment(plan):
+    plan = copy.deepcopy(plan)
+    plan['visual_alignment'] = [
+        {'line_id': cue['line_id'], 'clip_id': clip['id'],
+         'source_in_frame': clip['source_in_frame'], 'source_out_frame': clip['source_out_frame'],
+         'visible_summary': 'Synthetic generated colour fixture, not a product claim.'}
+        for cue, clip in zip(plan['subtitles'], plan['video'])]
+    return plan
+
+
+def approval_for(plan, plan_path, exported, evidence):
+    return {
+        'schema': 'jianying_alignment_review/v1', 'plan_sha256': core.digest(plan_path),
+        'export_sha256': core.digest(exported), 'decision': 'approved', 'reviewer': 'operator',
+        'observed': 'Synthetic unit-test review, not actual human approval',
+        'details': 'Only exercises attributed per-cue contract validation.',
+        'shots': [dict(line_id=c['line_id'], clip_id=m['clip_id'], text=c['text'],
+                       in_frame=c['in_frame'], out_frame=c['out_frame'], verdict='matched',
+                       observation='Synthetic fixture observation.', evidence_index=0)
+                  for c, m in zip(plan['subtitles'], plan['visual_alignment'])],
+        'evidence': [{'path': str(evidence), 'sha256': core.digest(evidence)}]}
+
+
 class EditingValidationTests(unittest.TestCase):
     """Cheap rejection cases use recorded metadata, never real GUI operations."""
 
@@ -76,6 +99,28 @@ class EditingValidationTests(unittest.TestCase):
         plan, assets = self.validate()
         self.assertEqual(plan['output']['frames'], 270)
         self.assertEqual(set(assets), {'source', 'voice'})
+
+    def test_aligned_plan_is_accepted_and_bad_mappings_rejected(self):
+        aligned = add_alignment(self.plan)
+        self.validate(aligned)
+        for key, value in [('line_id', 'unknown'), ('clip_id', 'unknown'),
+                           ('source_in_frame', 38), ('source_out_frame', 158),
+                           ('source_in_frame', True), ('visible_summary', '')]:
+            changed = copy.deepcopy(aligned)
+            changed['visual_alignment'][0][key] = value
+            with self.subTest(key=key, value=value), self.assertRaises(core.EditError):
+                self.validate(changed)
+        for rows in ([], [aligned['visual_alignment'][0]] * 2):
+            changed = dict(aligned, visual_alignment=rows)
+            with self.assertRaises(core.EditError):
+                self.validate(changed)
+
+    def test_alignment_rejects_a_cue_spanning_multiple_pictures(self):
+        changed = add_alignment(self.plan)
+        changed['subtitles'][0]['out_frame'] = 121
+        changed['subtitles'][1]['in_frame'] = 121
+        with self.assertRaisesRegex(core.EditError, 'crosses'):
+            self.validate(changed)
 
     def test_schema_and_unknown_fields_are_rejected(self):
         for scope, key, value in [
@@ -244,6 +289,103 @@ class EditingValidationTests(unittest.TestCase):
         self.assertFalse((attempt / 'events.jsonl').exists())
 
 
+class AlignmentReviewTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.attempt = self.root / 'attempt'
+        self.attempt.mkdir()
+        source, voice = self.root / 'source', self.root / 'voice'
+        source.write_bytes(b'generated fixture source'); voice.write_bytes(b'generated tone')
+        self.plan = add_alignment(plan_for(source, voice))
+        self.plan_path = self.attempt / 'edit_plan.json'
+        save(self.plan_path, self.plan)
+        self.export = self.root / 'synthetic-export-not-media'
+        self.export.write_bytes(b'not media; tests review identity, never decoder or actual GUI')
+        self.anchor = self.root / 'synthetic-evidence.txt'
+        self.anchor.write_text('This is an explicit synthetic review fixture, not actual video evidence.')
+        self.receipt = self.root / 'review.json'
+        self.good = approval_for(self.plan, self.plan_path, self.export, self.anchor)
+
+    def record(self, data=None, filename='review.json'):
+        path = self.root / filename
+        save(path, self.good if data is None else data)
+        return core.review(self.attempt, self.export, path)
+
+    def rejection(self):
+        return dict(self.good, decision='rejected', reviewer='user', shots=[], evidence=[],
+                    details='Synthetic reproduction of explicit user rejection: unrelated captions.')
+
+    def test_per_cue_review_is_hash_bound_and_idempotent(self):
+        self.assertEqual(self.record()['decision'], 'approved')
+        self.assertEqual(self.record()['decision'], 'approved')
+        self.assertEqual(len((self.attempt / 'alignment-reviews.jsonl').read_text().splitlines()), 1)
+
+    def test_missing_or_mismatched_cue_cannot_grant_approval(self):
+        for key, value in [('text', 'A different claim'), ('clip_id', 'wrong'),
+                           ('in_frame', True), ('out_frame', 121), ('verdict', 'not_reviewed'),
+                           ('evidence_index', True), ('observation', '')]:
+            changed = copy.deepcopy(self.good)
+            changed['shots'][0][key] = value
+            with self.subTest(key=key), self.assertRaises(core.EditError):
+                self.record(changed)
+        for shots in ([], [self.good['shots'][0]] * 2):
+            with self.assertRaises(core.EditError):
+                self.record(dict(self.good, shots=shots))
+
+    def test_review_for_other_plan_or_export_is_rejected_before_append(self):
+        for key in ('plan_sha256', 'export_sha256'):
+            with self.subTest(key=key), self.assertRaisesRegex(core.EditError, 'bind'):
+                self.record(dict(self.good, **{key: '0' * 64}))
+        self.assertFalse((self.attempt / 'alignment-reviews.jsonl').exists())
+
+    def test_changed_receipt_or_anchor_fails_closed(self):
+        self.record()
+        self.anchor.write_text('changed evidence')
+        with self.assertRaisesRegex(core.EditError, 'evidence changed'):
+            core.review_status(self.attempt, self.plan, self.export)
+        self.anchor.write_text('This is an explicit synthetic review fixture, not actual video evidence.')
+        self.receipt.write_text('{}')
+        with self.assertRaisesRegex(core.EditError, 'receipt changed'):
+            core.review_status(self.attempt, self.plan, self.export)
+
+    def test_user_rejection_dominates_earlier_approval_and_operator_cannot_clear_it(self):
+        self.record()
+        self.record(self.rejection(), 'reject.json')
+        self.assertEqual(core.review_status(self.attempt, self.plan, self.export)['decision'], 'rejected')
+        with self.assertRaisesRegex(core.EditError, '[Cc]annot clear'):
+            self.record(filename='operator-reapproval.json')
+
+    def test_declared_user_role_cannot_override_rejected_bytes(self):
+        self.record(self.rejection(), 'reject.json')
+        with self.assertRaisesRegex(core.EditError, '[Cc]annot clear'):
+            self.record(dict(self.good, reviewer='user'), 'claimed-user-reapproval.json')
+        self.assertEqual(core.review_status(self.attempt, self.plan, self.export)['decision'], 'rejected')
+
+    def test_new_export_does_not_reuse_old_approval(self):
+        self.record()
+        other = self.root / 'different-export'
+        other.write_bytes(b'different output requires new review')
+        self.assertEqual(core.review_status(self.attempt, self.plan, other)['decision'], 'not_reviewed')
+
+    def test_plan_reformatting_does_not_erase_rejection_of_identical_media(self):
+        self.record(self.rejection(), 'reject.json')
+        self.plan_path.write_text(json.dumps(self.plan, indent=4))
+        self.good['plan_sha256'] = core.digest(self.plan_path)
+        self.assertEqual(core.review_status(self.attempt, self.plan, self.export)['decision'], 'rejected')
+        with self.assertRaisesRegex(core.EditError, '[Cc]annot clear'):
+            self.record(filename='new-plan-same-rejected-video.json')
+
+    def test_legacy_plan_can_record_rejection_but_cannot_gain_semantic_approval(self):
+        del self.plan['visual_alignment']
+        save(self.plan_path, self.plan)
+        self.good['plan_sha256'] = core.digest(self.plan_path)
+        with self.assertRaisesRegex(core.EditError, 'every mapped cue'):
+            self.record()
+        self.assertEqual(self.record(self.rejection(), 'legacy-rejected.json')['decision'], 'rejected')
+
+
 @unittest.skipUnless(shutil.which('ffmpeg') and shutil.which('ffprobe'), 'existing ffmpeg/ffprobe required')
 class EditingRealMediaTests(unittest.TestCase):
     """Independent pixel comparison checks selected source frames, not just counts."""
@@ -339,7 +481,8 @@ class EditingRealMediaTests(unittest.TestCase):
         attempt = self.verification_attempt('missing-gui')
         report = core.verify(attempt, self.synthetic_export, self.project)
         self.assertEqual(report['status'], 'partial')
-        self.assertEqual(set(report['missing_gui_reviews']), set(core.GUI_EVENTS))
+        self.assertEqual(set(report['missing_gui_reviews']), set(core.GUI_EVENTS) |
+                         {'visual_alignment_plan', 'shot_alignment_review'})
         self.assertTrue(report['video']['full_decode_passed'])
         self.assertLess(report['video']['audio_max_dbfs'], 0)
 
@@ -419,6 +562,13 @@ class EditingRealMediaTests(unittest.TestCase):
                                   ('export_unknown', 'export_completed'),
                                   ('export_requested', 'export_completed')):
             attempt = self.verification_attempt('resolved-' + blocked)
+            plan = add_alignment(self.plan)
+            save(attempt / 'edit_plan.json', plan)
+            anchor = attempt / 'review-evidence.txt'
+            anchor.write_text('Synthetic contract review, not actual GUI evidence.')
+            receipt = attempt / 'alignment-review.json'
+            save(receipt, approval_for(plan, attempt / 'edit_plan.json', self.synthetic_export, anchor))
+            core.review(attempt, self.synthetic_export, receipt)
             for name in core.GUI_EVENTS:
                 values = {}
                 if name in ('export_requested', 'export_completed'):
@@ -434,6 +584,28 @@ class EditingRealMediaTests(unittest.TestCase):
                 result = core.verify(attempt, self.synthetic_export, self.project)
                 self.assertEqual(result['status'], 'verified_with_recorded_gui_review')
                 self.assertEqual(result['missing_gui_reviews'], [])
+
+    def test_generic_gui_review_alone_does_not_prove_semantic_alignment(self):
+        attempt = self.verification_attempt('all-gui-no-semantic-review')
+        for name in core.GUI_EVENTS:
+            values = {}
+            if name in ('export_requested', 'export_completed'):
+                values['export_path'] = str(self.synthetic_export)
+            if name == 'project_reopened':
+                values['project_path'] = str(self.project)
+            self.record_fixture_receipt(attempt, name, **values)
+        report = core.verify(attempt, self.synthetic_export, self.project)
+        self.assertEqual(report['status'], 'partial')
+        self.assertIn('visual_alignment_plan', report['missing_gui_reviews'])
+        rejection = {'schema': 'jianying_alignment_review/v1',
+                     'plan_sha256': core.digest(attempt / 'edit_plan.json'),
+                     'export_sha256': core.digest(self.synthetic_export), 'decision': 'rejected',
+                     'reviewer': 'user', 'observed': 'Synthetic explicit rejection fixture',
+                     'details': 'Captions unrelated to picture, despite all generic GUI receipts.',
+                     'shots': [], 'evidence': []}
+        path = attempt / 'rejection.json'; save(path, rejection)
+        core.review(attempt, self.synthetic_export, path)
+        self.assertEqual(core.verify(attempt, self.synthetic_export, self.project)['status'], 'rejected')
 
 
 if __name__ == '__main__':
