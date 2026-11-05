@@ -18,6 +18,8 @@ def main():
     retime.add_argument('plan'); retime.add_argument('--output', required=True)
     simulation = sub.add_parser('simulate', help='Render explicit viewport/occlusion assumptions; never approves actual phone readability')
     simulation.add_argument('plan'); simulation.add_argument('--output', required=True)
+    montage = sub.add_parser('montage', help='Prepare labelled real result excerpts over a fixed template; never fabricates product outcomes')
+    montage.add_argument('plan'); montage.add_argument('--output', required=True)
     args = ap.parse_args()
     try:
         if args.command == 'validate':
@@ -36,6 +38,9 @@ def main():
         elif args.command == 'simulate':
             from .occlusion import simulate
             result = simulate(args.plan, args.output)
+        elif args.command == 'montage':
+            from .montage import prepare_montage
+            result = prepare_montage(args.plan, args.output)
         else:
             result = audit(args.plan, args.exported, args.review); save_new(args.output, result)
         print(json.dumps(result, ensure_ascii=False, indent=2))
