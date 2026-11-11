@@ -1,0 +1,14 @@
+{
+  "locale": "zh-CN",
+  "timezone": "Asia/Shanghai",
+  "model": "gpt-6.1-sol",
+  "effort": "high",
+  "word_budget": 4000,
+  "max_output_tokens": 14000,
+  "max_transcript_characters": 60000,
+  "max_image_bytes": 8388608,
+  "frame_count": 24,
+  "audio_chunk_seconds": 600,
+  "username_labels": ["username", "account", "账号"],
+  "password_labels": ["password", "密码"]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZhiCut 视频深度解析"
+  short_description: "用完整转写和真实抽样帧生成含整片洞见的视频解析报告，统一归档结果"
+  default_prompt: "使用 $zhicut-video-analysis 解析指定视频，生成顶部含整片洞见的报告并归档到 skill 的 outputs 目录。"
