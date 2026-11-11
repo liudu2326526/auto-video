@@ -1,0 +1,15 @@
+{
+  "schema": "material_provider_request/v1",
+  "id": "pexels_office_example",
+  "provider": "pexels",
+  "project_id": "tool_video_context_example",
+  "scene_id": "context_office",
+  "asset_id": "office_broll",
+  "line_ids": [],
+  "public_nonpersonal": true,
+  "query": "office laptop",
+  "media_type": "image",
+  "limit": 3,
+  "orientation": "landscape",
+  "purpose": "Office context for a tool-explainer pain point; not product interaction or result evidence."
+}

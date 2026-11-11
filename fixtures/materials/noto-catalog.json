@@ -1,0 +1,174 @@
+{
+  "schema": "material_source_catalog/v1",
+  "checked_at": "2026-11-04T10:21:05Z",
+  "items": [
+    {
+      "id": "noto_thinking",
+      "provider": "noto",
+      "kind": "animation",
+      "automation_allowed": true,
+      "blocked_reason": null,
+      "source_version": "latest; HEAD Last-Modified=Wed, 16 Sep 2026 00:01:55 GMT; no immutable animation commit verified",
+      "record": {
+        "schema": "material_record/v1",
+        "id": "noto_thinking_20261104",
+        "title": "Thinking Face — Animated Noto Emoji",
+        "description": "思考或提出问题的情绪动画候选；只核查官方元数据和 GIF 的 HEAD 响应，尚未下载、完整查看或获准本次剪辑使用。仅作情境表达，不证明工具功能或实测结果。",
+        "media_type": "image",
+        "tags": ["noto", "emoji", "animation", "thinking", "思考", "疑问", "illustrative_context"],
+        "source": {
+          "provider": "Google Animated Noto Emoji",
+          "page_url": "https://googlefonts.github.io/noto-emoji-files/",
+          "creator": "Google / Google Fonts",
+          "retrieved_at": "2026-11-04T10:21:05Z",
+          "access": "public_no_login",
+          "download_url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f914/512.gif"
+        },
+        "rights": {
+          "status": "known",
+          "license_id": "CC-BY-4.0",
+          "license_url": "https://creativecommons.org/licenses/by/4.0/",
+          "commercial_use": "allowed",
+          "derivatives": "allowed",
+          "attribution_required": true,
+          "attribution_text": "Thinking Face — Animated Noto Emoji by Google / Google Fonts. Source: https://googlefonts.github.io/noto-emoji-files/ . Original file: https://fonts.gstatic.com/s/e/notoemoji/latest/1f914/512.gif . License: Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/ . Changes: none (original file).",
+          "restrictions": [
+            "Retain supplied creator, copyright, license and disclaimer notices, the source link, and the CC BY 4.0 license link in a manner reasonable for the final distribution medium.",
+            "Indicate actual changes and retain prior modification notices; replace Changes: none (original file) with the real editing or transformation statement when applicable.",
+            "Do not imply endorsement, sponsorship or official status from Google, Google Fonts or other attribution parties.",
+            "Do not impose additional legal or effective technological restrictions on the licensed material; trademark, privacy, publicity and other unlicensed rights require separate assessment."
+          ],
+          "checked_at": "2026-11-04T10:21:05Z",
+          "evidence": [
+            {
+              "url": "https://googlefonts.github.io/noto-emoji-files/",
+              "retrieved_at": "2026-11-04T10:21:05Z",
+              "scope": "asset_license",
+              "excerpt": "The official Noto Emoji documentation identifies its animated collection as CC BY 4.0 in the FAQ addressing commercial video, broadcast and application use. The separately checked official metadata identifies Thinking Face, rgi 1f914, as part of this animated collection."
+            },
+            {
+              "url": "https://googlefonts.github.io/noto-emoji-files/data/emojis_data.js?v=20260916_v7",
+              "retrieved_at": "2026-11-04T10:21:05Z",
+              "scope": "asset_license",
+              "excerpt": "Official collection metadata identifies emoji_u1f914 as Thinking Face with rgi 1f914 and hasGfontsAnim true; this binds the candidate to the animated family covered by the official FAQ. Unicode proposal authors in this metadata are not asserted to be the animation artists."
+            },
+            {
+              "url": "https://googlefonts.github.io/noto-emoji-files/app.js?v=20260916_v7",
+              "retrieved_at": "2026-11-04T10:21:05Z",
+              "scope": "asset_license",
+              "excerpt": "The official site's per-item 2D GIF download action constructs the fonts.gstatic.com/s/e/notoemoji/latest/{rgi}/512.gif URL. A metadata-only HEAD request to this candidate returned 200, image/gif, Content-Length 1388932 and Last-Modified Wed, 16 Sep 2026 00:01:55 GMT, without a redirect or login."
+            },
+            {
+              "url": "https://creativecommons.org/licenses/by/4.0/legalcode.en",
+              "retrieved_at": "2026-11-04T10:21:05Z",
+              "scope": "license_terms",
+              "excerpt": "Official CC BY 4.0 terms permit reproduction, sharing and adaptation, including commercial purposes. Attribution conditions require supplied credits and notices, a source and license link, and identification of modifications. Endorsement and extra downstream restrictions are not permitted; trademark and personality rights are excluded."
+            }
+          ],
+          "allowed_distributions": ["internal", "public_social", "paid_advertising"],
+          "valid_until": null,
+          "share_alike_required": false
+        },
+        "risks": [
+          "Only public text metadata and HEAD headers were checked. No GIF bytes were downloaded, no local hash exists, and no visual or human usage approval has been performed.",
+          "Before use, fully decode and validate all GIF frames, frame count, timing, looping, transparency and actual content. This candidate is an animation, not an approved static frame or an editing-compatible video.",
+          "The official CDN URL uses mutable latest. No immutable animation commit was verified; retain the original downloaded file, its SHA-256, download time, headers and license evidence, and check conditions before reuse.",
+          "Animated assets use the official animated-family CC BY 4.0 statement; do not substitute the Noto font OFL or static-image Apache license. No separate per-animation NOTICE or individual artist attribution was located.",
+          "The official site supplies individual downloads; robots.txt at the site and CDN roots returned 404, which is not blanket authorization for scraping. Keep retrieval to an explicitly requested public single file and honor future access restrictions.",
+          "Use only as illustrative context; assess final attribution placement, actual modifications, third-party rights and distribution conditions before human approval."
+        ]
+      },
+      "evidence_urls": [
+        "https://googlefonts.github.io/noto-emoji-files/",
+        "https://googlefonts.github.io/noto-emoji-files/data/emojis_data.js?v=20260916_v7",
+        "https://googlefonts.github.io/noto-emoji-files/app.js?v=20260916_v7",
+        "https://developers.googleblog.com/updates-to-emoji-new-characters-new-animation-new-color-customization-and-more/",
+        "https://creativecommons.org/licenses/by/4.0/legalcode.en"
+      ]
+    },
+    {
+      "id": "noto_party",
+      "provider": "noto",
+      "kind": "animation",
+      "automation_allowed": true,
+      "blocked_reason": null,
+      "source_version": "latest; HEAD Last-Modified=Wed, 16 Sep 2026 00:01:55 GMT; no immutable animation commit verified",
+      "record": {
+        "schema": "material_record/v1",
+        "id": "noto_party_20261104",
+        "title": "Party Popper — Animated Noto Emoji",
+        "description": "完成操作或庆祝结果的情绪动画候选；只核查官方元数据和 GIF 的 HEAD 响应，尚未下载、完整查看或获准本次剪辑使用。仅作情境表达，不证明工具功能或实测结果。",
+        "media_type": "image",
+        "tags": ["noto", "emoji", "animation", "party", "celebration", "庆祝", "完成", "illustrative_context"],
+        "source": {
+          "provider": "Google Animated Noto Emoji",
+          "page_url": "https://googlefonts.github.io/noto-emoji-files/",
+          "creator": "Google / Google Fonts",
+          "retrieved_at": "2026-11-04T10:21:05Z",
+          "access": "public_no_login",
+          "download_url": "https://fonts.gstatic.com/s/e/notoemoji/latest/1f389/512.gif"
+        },
+        "rights": {
+          "status": "known",
+          "license_id": "CC-BY-4.0",
+          "license_url": "https://creativecommons.org/licenses/by/4.0/",
+          "commercial_use": "allowed",
+          "derivatives": "allowed",
+          "attribution_required": true,
+          "attribution_text": "Party Popper — Animated Noto Emoji by Google / Google Fonts. Source: https://googlefonts.github.io/noto-emoji-files/ . Original file: https://fonts.gstatic.com/s/e/notoemoji/latest/1f389/512.gif . License: Creative Commons Attribution 4.0 International (CC BY 4.0), https://creativecommons.org/licenses/by/4.0/ . Changes: none (original file).",
+          "restrictions": [
+            "Retain supplied creator, copyright, license and disclaimer notices, the source link, and the CC BY 4.0 license link in a manner reasonable for the final distribution medium.",
+            "Indicate actual changes and retain prior modification notices; replace Changes: none (original file) with the real editing or transformation statement when applicable.",
+            "Do not imply endorsement, sponsorship or official status from Google, Google Fonts or other attribution parties.",
+            "Do not impose additional legal or effective technological restrictions on the licensed material; trademark, privacy, publicity and other unlicensed rights require separate assessment."
+          ],
+          "checked_at": "2026-11-04T10:21:05Z",
+          "evidence": [
+            {
+              "url": "https://googlefonts.github.io/noto-emoji-files/",
+              "retrieved_at": "2026-11-04T10:21:05Z",
+              "scope": "asset_license",
+              "excerpt": "The official Noto Emoji documentation identifies its animated collection as CC BY 4.0 in the FAQ addressing commercial video, broadcast and application use. The separately checked official metadata identifies Party Popper, rgi 1f389, as part of this animated collection."
+            },
+            {
+              "url": "https://googlefonts.github.io/noto-emoji-files/data/emojis_data.js?v=20260916_v7",
+              "retrieved_at": "2026-11-04T10:21:05Z",
+              "scope": "asset_license",
+              "excerpt": "Official collection metadata identifies emoji_u1f389 as Party Popper with rgi 1f389 and hasGfontsAnim true; this binds the candidate to the animated family covered by the official FAQ. Unicode proposal authors in this metadata are not asserted to be the animation artists."
+            },
+            {
+              "url": "https://googlefonts.github.io/noto-emoji-files/app.js?v=20260916_v7",
+              "retrieved_at": "2026-11-04T10:21:05Z",
+              "scope": "asset_license",
+              "excerpt": "The official site's per-item 2D GIF download action constructs the fonts.gstatic.com/s/e/notoemoji/latest/{rgi}/512.gif URL. A metadata-only HEAD request to this candidate returned 200, image/gif, Content-Length 395755 and Last-Modified Wed, 16 Sep 2026 00:01:55 GMT, without a redirect or login."
+            },
+            {
+              "url": "https://creativecommons.org/licenses/by/4.0/legalcode.en",
+              "retrieved_at": "2026-11-04T10:21:05Z",
+              "scope": "license_terms",
+              "excerpt": "Official CC BY 4.0 terms permit reproduction, sharing and adaptation, including commercial purposes. Attribution conditions require supplied credits and notices, a source and license link, and identification of modifications. Endorsement and extra downstream restrictions are not permitted; trademark and personality rights are excluded."
+            }
+          ],
+          "allowed_distributions": ["internal", "public_social", "paid_advertising"],
+          "valid_until": null,
+          "share_alike_required": false
+        },
+        "risks": [
+          "Only public text metadata and HEAD headers were checked. No GIF bytes were downloaded, no local hash exists, and no visual or human usage approval has been performed.",
+          "Before use, fully decode and validate all GIF frames, frame count, timing, looping, transparency and actual content. This candidate is an animation, not an approved static frame or an editing-compatible video.",
+          "The official CDN URL uses mutable latest. No immutable animation commit was verified; retain the original downloaded file, its SHA-256, download time, headers and license evidence, and check conditions before reuse.",
+          "Animated assets use the official animated-family CC BY 4.0 statement; do not substitute the Noto font OFL or static-image Apache license. No separate per-animation NOTICE or individual artist attribution was located.",
+          "The official site supplies individual downloads; robots.txt at the site and CDN roots returned 404, which is not blanket authorization for scraping. Keep retrieval to an explicitly requested public single file and honor future access restrictions.",
+          "Use only as illustrative context; assess final attribution placement, actual modifications, third-party rights and distribution conditions before human approval."
+        ]
+      },
+      "evidence_urls": [
+        "https://googlefonts.github.io/noto-emoji-files/",
+        "https://googlefonts.github.io/noto-emoji-files/data/emojis_data.js?v=20260916_v7",
+        "https://googlefonts.github.io/noto-emoji-files/app.js?v=20260916_v7",
+        "https://developers.googleblog.com/updates-to-emoji-new-characters-new-animation-new-color-customization-and-more/",
+        "https://creativecommons.org/licenses/by/4.0/legalcode.en"
+      ]
+    }
+  ]
+}

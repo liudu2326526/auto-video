@@ -1,0 +1,423 @@
+{
+  "schema_version": 2,
+  "tool_id": "tool_c349fe616c0a50d06288",
+  "candidate_digest": "635cde4e9b35b18aecdbe9fd9401da039f1500c38fae26f5330d32f8532444d5",
+  "brief": {
+    "audience": "需要用真实数字做内部周报的项目负责人",
+    "pain_point": "资料零散，汇报只会罗列；漂亮页面又可能掩盖事实错误",
+    "angle": "用同一份虚构周报输入检验从事实到页面的完整过程，先看可核对的结果",
+    "hook": "四个数字，能讲成一份周报吗？",
+    "payoff": "看清真实输入、关键选择、修改结果与限制，判断是否适合自己的起稿任务",
+    "duration_seconds": 53,
+    "input_classification": "synthetic_nonpersonal",
+    "demo_input": "以下均为虚构演示数据，不对应真实公司、客户或个人。请用中文制作6页团队周报：1标题与结论；2本周进展；3数据；4问题；5下周计划；6需决策事项。项目：纸飞机演示项目。进展：完成原型、访谈8人、修复12个问题。数据：注册120、激活72；请准确保留原数，不编造增长率或收入。问题：移动端导航难找。下周：测试两种导航、再访谈5人。决策：选择顶部或底部导航。不添加未经提供的成绩。",
+    "success_criteria": "生成结果可打开；检查6页结构、中文可读性、数字120/72/8/12准确、没有虚构增长率；尝试修改一处标题并确认结果保持；逐项记录通过或失败。页数或数字不符则如实展示，不能宣布成功。"
+  },
+  "assets": [
+    {
+      "id": "screen-recording",
+      "description": "同一虚构周报任务的输入、关键操作、成品与核对录屏；本fixture没有这些真实素材",
+      "origin": "待另行授权的实际操作或经核对转移的原始录屏",
+      "status": "to_capture",
+      "rights_review": "待核对，仅自建非个人示例，不沿用他人作品授权",
+      "privacy_review": "待核对，不含私人文档、账号信息或通知"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "scene_01",
+      "start": 0,
+      "end": 3,
+      "claim_kind": "instruction",
+      "narration": "四个数字，能讲成一份周报吗？",
+      "subtitle": "四个数字，能讲成一份周报吗？",
+      "visual": "待拍/待核对：真实六页成品总览，明确是虚构数据示例；未取得前不拍假结果",
+      "purpose": "先展示真实成品，让观众知道最终要交付什么",
+      "asset_ids": [
+        "screen-recording"
+      ],
+      "source_ids": [],
+      "test_ids": [],
+      "beat": "result",
+      "goal": "先展示真实成品，让观众知道最终要交付什么",
+      "hook": "四个数字，能讲成一份周报吗？",
+      "visible_change": "由成果反向引出做法",
+      "emotion": "有结果可期待，仍保留问题",
+      "transition_purpose": "从成果倒回同一份原始输入",
+      "fallback": "先转移和检查已有操作片；不支持本句时改稿、补拍或删除，绝不以无关翻页冒充。",
+      "lines": [
+        {
+          "id": "line_01",
+          "start_ms": 0,
+          "end_ms": 3000,
+          "narration": "四个数字，能讲成一份周报吗？",
+          "subtitle": "四个数字，能讲成一份周报吗？",
+          "status": "missing",
+          "evidence": [],
+          "missing": {
+            "reason": "尚无绑定该虚构周报任务、已逐镜核对的实际操作素材",
+            "required_shot": "真实六页成品总览，明确是虚构数据示例；未取得前不拍假结果",
+            "next_action": "transfer"
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene_02",
+      "start": 3,
+      "end": 8,
+      "claim_kind": "instruction",
+      "narration": "数字我有，排版没动。最怕开会讲得像没干活。",
+      "subtitle": "数字我有，排版没动。最怕开会讲得像没干活。",
+      "visual": "待拍/待核对：同一份虚构周报任务和交付要求，不使用真实公司数据",
+      "purpose": "建立具体任务与生活化痛点",
+      "asset_ids": [
+        "screen-recording"
+      ],
+      "source_ids": [],
+      "test_ids": [],
+      "beat": "task",
+      "goal": "建立具体任务与生活化痛点",
+      "hook": "开会最怕哪种尴尬？",
+      "visible_change": "从成品回到散落的任务信息",
+      "emotion": "轻微自嘲，不嘲讽用户或暗示实际用时",
+      "transition_purpose": "把抱怨落到固定输入",
+      "fallback": "先转移和检查已有操作片；不支持本句时改稿、补拍或删除，绝不以无关翻页冒充。",
+      "lines": [
+        {
+          "id": "line_02",
+          "start_ms": 3000,
+          "end_ms": 8000,
+          "narration": "数字我有，排版没动。最怕开会讲得像没干活。",
+          "subtitle": "数字我有，排版没动。最怕开会讲得像没干活。",
+          "status": "missing",
+          "evidence": [],
+          "missing": {
+            "reason": "尚无绑定该虚构周报任务、已逐镜核对的实际操作素材",
+            "required_shot": "同一份虚构周报任务和交付要求，不使用真实公司数据",
+            "next_action": "transfer"
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene_03",
+      "start": 8,
+      "end": 14,
+      "claim_kind": "instruction",
+      "narration": "只给这四个数字，不让它替我补业绩。",
+      "subtitle": "只给这四个数字，不让它替我补业绩。",
+      "visual": "待拍/待核对：输入120注册、72激活、8次访谈、12项修复，以及六页中文周报要求",
+      "purpose": "呈现固定输入及不可编造约束",
+      "asset_ids": [
+        "screen-recording"
+      ],
+      "source_ids": [],
+      "test_ids": [],
+      "beat": "input",
+      "goal": "呈现固定输入及不可编造约束",
+      "hook": "把底牌摆出来",
+      "visible_change": "从零散事实变成可检查输入",
+      "emotion": "务实，避免伪造漂亮业绩",
+      "transition_purpose": "为随后大纲检查提供参照",
+      "fallback": "先转移和检查已有操作片；不支持本句时改稿、补拍或删除，绝不以无关翻页冒充。",
+      "lines": [
+        {
+          "id": "line_03",
+          "start_ms": 8000,
+          "end_ms": 14000,
+          "narration": "只给这四个数字，不让它替我补业绩。",
+          "subtitle": "只给这四个数字，不让它替我补业绩。",
+          "status": "missing",
+          "evidence": [],
+          "missing": {
+            "reason": "尚无绑定该虚构周报任务、已逐镜核对的实际操作素材",
+            "required_shot": "输入120注册、72激活、8次访谈、12项修复，以及六页中文周报要求",
+            "next_action": "transfer"
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene_04",
+      "start": 14,
+      "end": 20,
+      "claim_kind": "instruction",
+      "narration": "先查大纲，再选风格。好看之前，重点别跑偏。",
+      "subtitle": "先查大纲，再选风格。好看之前，重点别跑偏。",
+      "visual": "待拍/待核对：实际大纲和风格界面，关键选择可读；不臆造按钮或效果",
+      "purpose": "展示真正的大纲检查与风格选择",
+      "asset_ids": [
+        "screen-recording"
+      ],
+      "source_ids": [],
+      "test_ids": [],
+      "beat": "action",
+      "goal": "展示真正的大纲检查与风格选择",
+      "hook": "漂亮之前，先别跑题",
+      "visible_change": "输入变为大纲和明确选择",
+      "emotion": "小提醒，观众知道要盯哪里",
+      "transition_purpose": "由关键选择接到真实输出",
+      "fallback": "先转移和检查已有操作片；不支持本句时改稿、补拍或删除，绝不以无关翻页冒充。",
+      "lines": [
+        {
+          "id": "line_04",
+          "start_ms": 14000,
+          "end_ms": 20000,
+          "narration": "先查大纲，再选风格。好看之前，重点别跑偏。",
+          "subtitle": "先查大纲，再选风格。好看之前，重点别跑偏。",
+          "status": "missing",
+          "evidence": [],
+          "missing": {
+            "reason": "尚无绑定该虚构周报任务、已逐镜核对的实际操作素材",
+            "required_shot": "实际大纲和风格界面，关键选择可读；不臆造按钮或效果",
+            "next_action": "transfer"
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene_05",
+      "start": 20,
+      "end": 32,
+      "claim_kind": "instruction",
+      "narration": "生成稿要逐页看：数字没变，关系也得讲得通。",
+      "subtitle": "生成稿要逐页看：数字没变，关系也得讲得通。",
+      "visual": "待拍/待核对：真实生成前后与相应页；若没有生成过程，不用翻页伪装",
+      "purpose": "展示输入到输出的实际变化",
+      "asset_ids": [
+        "screen-recording"
+      ],
+      "source_ids": [],
+      "test_ids": [],
+      "beat": "change",
+      "goal": "展示输入到输出的实际变化",
+      "hook": "数字有没有变成故事？",
+      "visible_change": "同一输入到实际成品的可见前后差异",
+      "emotion": "短暂满足，保留核对意识",
+      "transition_purpose": "先给变化，再验证能否修改",
+      "fallback": "先转移和检查已有操作片；不支持本句时改稿、补拍或删除，绝不以无关翻页冒充。",
+      "lines": [
+        {
+          "id": "line_05",
+          "start_ms": 20000,
+          "end_ms": 32000,
+          "narration": "生成稿要逐页看：数字没变，关系也得讲得通。",
+          "subtitle": "生成稿要逐页看：数字没变，关系也得讲得通。",
+          "status": "missing",
+          "evidence": [],
+          "missing": {
+            "reason": "尚无绑定该虚构周报任务、已逐镜核对的实际操作素材",
+            "required_shot": "真实生成前后与相应页；若没有生成过程，不用翻页伪装",
+            "next_action": "transfer"
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene_06",
+      "start": 32,
+      "end": 42,
+      "claim_kind": "instruction",
+      "narration": "再改一句话、换个主题。改完的内容，还得在。",
+      "subtitle": "再改一句话、换个主题。改完的内容，还得在。",
+      "visual": "待拍/待核对：实际编辑一处文案、切主题、确认内容与保存状态；缺镜则补拍或删掉这句",
+      "purpose": "验证真实修改与换主题及保存",
+      "asset_ids": [
+        "screen-recording"
+      ],
+      "source_ids": [],
+      "test_ids": [],
+      "beat": "change",
+      "goal": "验证真实修改与换主题及保存",
+      "hook": "别只看第一眼",
+      "visible_change": "旧句到新句、旧主题到新主题，内容保持",
+      "emotion": "像交作业前最后改一遍，不编造故障",
+      "transition_purpose": "从可修改进入事实核对",
+      "fallback": "先转移和检查已有操作片；不支持本句时改稿、补拍或删除，绝不以无关翻页冒充。",
+      "lines": [
+        {
+          "id": "line_06",
+          "start_ms": 32000,
+          "end_ms": 42000,
+          "narration": "再改一句话、换个主题。改完的内容，还得在。",
+          "subtitle": "再改一句话、换个主题。改完的内容，还得在。",
+          "status": "missing",
+          "evidence": [],
+          "missing": {
+            "reason": "尚无绑定该虚构周报任务、已逐镜核对的实际操作素材",
+            "required_shot": "实际编辑一处文案、切主题、确认内容与保存状态；缺镜则补拍或删掉这句",
+            "next_action": "transfer"
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene_07",
+      "start": 42,
+      "end": 50,
+      "claim_kind": "instruction",
+      "narration": "对照原始输入：多出来的结论，不能因为好看就放过。",
+      "subtitle": "对照原始输入：多出来的结论，不能因为好看就放过。",
+      "visual": "待拍/待核对：逐项输入输出对照；只说实际观察到的新增内容或限制，未观察不编造",
+      "purpose": "把扩写、数字与真实限制说清",
+      "asset_ids": [
+        "screen-recording"
+      ],
+      "source_ids": [],
+      "test_ids": [],
+      "beat": "limitation",
+      "goal": "把扩写、数字与真实限制说清",
+      "hook": "好看不等于可以闭眼交",
+      "visible_change": "从漂亮成品回到能否核对的事实",
+      "emotion": "适度刹车，避免神化工具",
+      "transition_purpose": "把实测边界变成选用标准",
+      "fallback": "先转移和检查已有操作片；不支持本句时改稿、补拍或删除，绝不以无关翻页冒充。",
+      "lines": [
+        {
+          "id": "line_07",
+          "start_ms": 42000,
+          "end_ms": 50000,
+          "narration": "对照原始输入：多出来的结论，不能因为好看就放过。",
+          "subtitle": "对照原始输入：多出来的结论，不能因为好看就放过。",
+          "status": "missing",
+          "evidence": [],
+          "missing": {
+            "reason": "尚无绑定该虚构周报任务、已逐镜核对的实际操作素材",
+            "required_shot": "逐项输入输出对照；只说实际观察到的新增内容或限制，未观察不编造",
+            "next_action": "transfer"
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene_08",
+      "start": 50,
+      "end": 53,
+      "claim_kind": "instruction",
+      "narration": "起稿可以试，事实自己把关。",
+      "subtitle": "起稿可以试，事实自己把关。",
+      "visual": "待拍/待核对：与本次任务对应的成品及明确适用条件，不暗示普遍效果",
+      "purpose": "给出有条件的适用人群",
+      "asset_ids": [
+        "screen-recording"
+      ],
+      "source_ids": [],
+      "test_ids": [],
+      "beat": "audience",
+      "goal": "给出有条件的适用人群",
+      "hook": "适合谁先试？",
+      "visible_change": "从过程证据回到观众决策",
+      "emotion": "清楚、克制，不强行推销",
+      "transition_purpose": "收束到可执行选择标准",
+      "fallback": "先转移和检查已有操作片；不支持本句时改稿、补拍或删除，绝不以无关翻页冒充。",
+      "lines": [
+        {
+          "id": "line_08",
+          "start_ms": 50000,
+          "end_ms": 53000,
+          "narration": "起稿可以试，事实自己把关。",
+          "subtitle": "起稿可以试，事实自己把关。",
+          "status": "missing",
+          "evidence": [],
+          "missing": {
+            "reason": "尚无绑定该虚构周报任务、已逐镜核对的实际操作素材",
+            "required_shot": "与本次任务对应的成品及明确适用条件，不暗示普遍效果",
+            "next_action": "transfer"
+          }
+        }
+      ]
+    }
+  ],
+  "recording_steps": [
+    {
+      "id": "step_01",
+      "action": "在另行授权和当前界面观察后取得：真实六页成品总览，明确是虚构数据示例；未取得前不拍假结果",
+      "expected_evidence": "保留同一任务输入/结果文件、原录屏身份与区间、实际成功/失败及耗时；按本镜核对",
+      "stop_condition": "缺素材、身份不明、私人信息、权限或费用不清时停止；不为计划而生成虚假结果",
+      "recovery": "保留失败与旧take；明确选择转移、补拍或重写，不覆盖原件",
+      "scene_ids": [
+        "scene_01"
+      ]
+    },
+    {
+      "id": "step_02",
+      "action": "在另行授权和当前界面观察后取得：同一份虚构周报任务和交付要求，不使用真实公司数据",
+      "expected_evidence": "保留同一任务输入/结果文件、原录屏身份与区间、实际成功/失败及耗时；按本镜核对",
+      "stop_condition": "缺素材、身份不明、私人信息、权限或费用不清时停止；不为计划而生成虚假结果",
+      "recovery": "保留失败与旧take；明确选择转移、补拍或重写，不覆盖原件",
+      "scene_ids": [
+        "scene_02"
+      ]
+    },
+    {
+      "id": "step_03",
+      "action": "在另行授权和当前界面观察后取得：输入120注册、72激活、8次访谈、12项修复，以及六页中文周报要求",
+      "expected_evidence": "保留同一任务输入/结果文件、原录屏身份与区间、实际成功/失败及耗时；按本镜核对",
+      "stop_condition": "缺素材、身份不明、私人信息、权限或费用不清时停止；不为计划而生成虚假结果",
+      "recovery": "保留失败与旧take；明确选择转移、补拍或重写，不覆盖原件",
+      "scene_ids": [
+        "scene_03"
+      ]
+    },
+    {
+      "id": "step_04",
+      "action": "在另行授权和当前界面观察后取得：实际大纲和风格界面，关键选择可读；不臆造按钮或效果",
+      "expected_evidence": "保留同一任务输入/结果文件、原录屏身份与区间、实际成功/失败及耗时；按本镜核对",
+      "stop_condition": "缺素材、身份不明、私人信息、权限或费用不清时停止；不为计划而生成虚假结果",
+      "recovery": "保留失败与旧take；明确选择转移、补拍或重写，不覆盖原件",
+      "scene_ids": [
+        "scene_04"
+      ]
+    },
+    {
+      "id": "step_05",
+      "action": "在另行授权和当前界面观察后取得：真实生成前后与相应页；若没有生成过程，不用翻页伪装",
+      "expected_evidence": "保留同一任务输入/结果文件、原录屏身份与区间、实际成功/失败及耗时；按本镜核对",
+      "stop_condition": "缺素材、身份不明、私人信息、权限或费用不清时停止；不为计划而生成虚假结果",
+      "recovery": "保留失败与旧take；明确选择转移、补拍或重写，不覆盖原件",
+      "scene_ids": [
+        "scene_05"
+      ]
+    },
+    {
+      "id": "step_06",
+      "action": "在另行授权和当前界面观察后取得：实际编辑一处文案、切主题、确认内容与保存状态；缺镜则补拍或删掉这句",
+      "expected_evidence": "保留同一任务输入/结果文件、原录屏身份与区间、实际成功/失败及耗时；按本镜核对",
+      "stop_condition": "缺素材、身份不明、私人信息、权限或费用不清时停止；不为计划而生成虚假结果",
+      "recovery": "保留失败与旧take；明确选择转移、补拍或重写，不覆盖原件",
+      "scene_ids": [
+        "scene_06"
+      ]
+    },
+    {
+      "id": "step_07",
+      "action": "在另行授权和当前界面观察后取得：逐项输入输出对照；只说实际观察到的新增内容或限制，未观察不编造",
+      "expected_evidence": "保留同一任务输入/结果文件、原录屏身份与区间、实际成功/失败及耗时；按本镜核对",
+      "stop_condition": "缺素材、身份不明、私人信息、权限或费用不清时停止；不为计划而生成虚假结果",
+      "recovery": "保留失败与旧take；明确选择转移、补拍或重写，不覆盖原件",
+      "scene_ids": [
+        "scene_07"
+      ]
+    },
+    {
+      "id": "step_08",
+      "action": "在另行授权和当前界面观察后取得：与本次任务对应的成品及明确适用条件，不暗示普遍效果",
+      "expected_evidence": "保留同一任务输入/结果文件、原录屏身份与区间、实际成功/失败及耗时；按本镜核对",
+      "stop_condition": "缺素材、身份不明、私人信息、权限或费用不清时停止；不为计划而生成虚假结果",
+      "recovery": "保留失败与旧take；明确选择转移、补拍或重写，不覆盖原件",
+      "scene_ids": [
+        "scene_08"
+      ]
+    }
+  ],
+  "story": {
+    "format": "task_result",
+    "hook_alternatives": [
+      "四个数字，能讲成一份周报吗？",
+      "数字都在，怎么把周报讲清楚？",
+      "先看周报成品，再倒回去看怎么做。"
+    ],
+    "chosen_hook": "四个数字，能讲成一份周报吗？"
+  }
+}

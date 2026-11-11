@@ -1,0 +1,62 @@
+{
+  "schema": "material_record/v1",
+  "id": "commons_laptop_download_v1",
+  "title": "Laptop image.jpg",
+  "description": "电脑办公情境候选，供下载校验；不是 Gamma 功能或实测结果证据。",
+  "media_type": "image",
+  "tags": [
+    "laptop",
+    "电脑",
+    "办公",
+    "office",
+    "context",
+    "b-roll"
+  ],
+  "source": {
+    "provider": "Wikimedia Commons",
+    "page_url": "https://commons.wikimedia.org/wiki/File:Laptop_image.jpg",
+    "creator": "Darakshanehaluddin",
+    "retrieved_at": "2026-11-04T08:31:11Z",
+    "access": "public_no_login",
+    "download_url": "https://upload.wikimedia.org/wikipedia/commons/6/6b/Laptop_image.jpg"
+  },
+  "rights": {
+    "status": "known",
+    "license_id": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "commercial_use": "allowed",
+    "derivatives": "allowed",
+    "attribution_required": false,
+    "attribution_text": "建议保留：Laptop image.jpg — Darakshanehaluddin — Wikimedia Commons — CC0 1.0。",
+    "restrictions": [
+      "CC0 does not grant trademark, privacy or publicity rights; no author endorsement may be implied."
+    ],
+    "checked_at": "2026-11-04T08:31:11Z",
+    "evidence": [
+      {
+        "url": "https://commons.wikimedia.org/w/index.php?title=File:Laptop_image.jpg&oldid=1217142170",
+        "retrieved_at": "2026-11-04T08:31:11Z",
+        "scope": "asset_license",
+        "excerpt": "File-specific Licensing section identifies CC0 1.0 Universal Public Domain Dedication; uploader identifies the file as own work."
+      },
+      {
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "retrieved_at": "2026-11-04T08:31:11Z",
+        "scope": "license_terms",
+        "excerpt": "Official CC0 deed permits copying, modifying and commercial use without copyright permission; trademark, privacy and publicity rights are excluded. No endorsement is implied."
+      }
+    ],
+    "allowed_distributions": [
+      "internal",
+      "public_social",
+      "paid_advertising"
+    ],
+    "valid_until": null,
+    "share_alike_required": false
+  },
+  "risks": [
+    "CC0 does not clear trademark, privacy or publicity rights; intended use still requires human review.",
+    "Asset license observations remain dated 2026-11-04T08:31:11Z; downloading does not refresh them.",
+    "Illustrative office context only; not product-test evidence."
+  ]
+}
