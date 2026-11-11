@@ -1,0 +1,36 @@
+{
+  "schema": "material_requests/v1",
+  "project_id": "gamma_story_context",
+  "public_nonpersonal": true,
+  "use_context": {
+    "commercial": true,
+    "derivatives": true,
+    "distribution": "public_social",
+    "role": "illustrative_context",
+    "share_alike_compatible": false
+  },
+  "requests": [
+    {
+      "id": "office_context",
+      "scene_id": "scene_context",
+      "line_ids": [
+        "line_context"
+      ],
+      "asset_id": "office_context",
+      "description": "演示排版痛点时插入电脑办公情境图，仅作氛围；不可替代产品操作/结果录屏。",
+      "public_queries": [
+        "laptop office public domain",
+        "电脑 办公 CC0"
+      ],
+      "media_types": [
+        "image",
+        "video"
+      ],
+      "tags": [
+        "电脑",
+        "office"
+      ],
+      "role": "illustrative_context"
+    }
+  ]
+}

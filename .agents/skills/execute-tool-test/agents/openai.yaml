@@ -1,0 +1,4 @@
+interface:
+  display_name: "实测执行 Agent"
+  short_description: "按冻结脚本监督工具实测，记录真实结果证据并向编剧交接成功失败和限制"
+  default_prompt: "使用 $execute-tool-test 执行获准的工具测试脚本，核对实际产物，记录耗时、失败与限制，并生成有证据的编剧交接文件。"

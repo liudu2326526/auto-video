@@ -1,0 +1,27 @@
+{
+  "schema": "material_download_policy/v1",
+  "provider": "commons_original",
+  "record_digest": "d798c2119c3dbc6c3fcf9d97c4f15ec36ba82b4856e07846a6e171580db9fd04",
+  "terms_checked_at": "2026-11-04T09:02:34Z",
+  "terms_evidence": [
+    {
+      "url": "https://wikitech.wikimedia.org/wiki/Robot_policy",
+      "retrieved_at": "2026-11-04T09:02:34Z",
+      "excerpt": "Official media rules cover originals and standard thumbnails, limit total concurrency and transfer rate, require robots/429 compliance, and prohibit circumvention."
+    },
+    {
+      "url": "https://foundation.wikimedia.org/wiki/Policy:Wikimedia_Foundation_User-Agent_Policy",
+      "retrieved_at": "2026-11-04T09:02:34Z",
+      "excerpt": "Use an identifiable application/version User-Agent with a contact website; do not impersonate a browser."
+    },
+    {
+      "url": "https://commons.wikimedia.org/wiki/Commons:Reusing_content_outside_Wikimedia",
+      "retrieved_at": "2026-11-04T09:02:34Z",
+      "excerpt": "Reuse or download the individual file subject to its specific license and third-party rights; inspect the source file page."
+    }
+  ],
+  "expected_sha256": "c35d650df80513bf822601807a236f43c2a73df4c27a4b669cf37b475b1c0cbe",
+  "max_bytes": 4194304,
+  "total_timeout": 60,
+  "resolver": "system"
+}
